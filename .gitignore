@@ -1,0 +1,17 @@
+/node_modules
+/.next
+/out
+/build
+.env
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+/coverage
+.DS_Store
+/.testdb
+# Cloudflare Workers build output + local Wrangler state/secrets (2026-10-12
+# deviation — see CLAUDE.md Section 4).
+/.open-next
+/.wrangler
+.dev.vars
+desktop.ini

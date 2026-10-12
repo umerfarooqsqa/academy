@@ -1,0 +1,36 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // 2026-10-12 deviation (CLAUDE.md Section 4): deploy target moved from
+  // Vercel to Cloudflare Workers — this file replaces vercel.json. See the
+  // plan notes near lib/db.ts and worker.ts for why each piece is here.
+  "name": "tutor-parent-matching",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-12",
+  // nodejs_compat: required for Prisma's driver adapter (@prisma/adapter-pg)
+  // and the existing node:crypto scrypt usage in lib/auth/passwords.ts.
+  // global_fetch_strictly_public: from @opennextjs/cloudflare's own template —
+  // a safe default restricting the Worker's fetch() to public addresses, fine
+  // for this app since every outbound call (WhatsApp/Groq/Gemini/Supabase/
+  // Facebook/Resend) is a public HTTPS API.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Bridges the Worker to the real Supabase Postgres instance over TCP —
+  // Workers can't open raw TCP connections on their own. Replace <id> with
+  // the id from `npx wrangler hyperdrive create` (built from the Supabase
+  // connection string) — an operator setup step, not a code value.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "<hyperdrive-id-from-operator-setup>"
+    }
+  ],
+  // Same two schedules vercel.json's `crons` array had — the daily Facebook
+  // digest, and the shared 15-minute check used by both the notification-delay
+  // and neglected-parent routes (see worker.ts's scheduled handler).
+  "triggers": {
+    "crons": ["0 15 * * *", "*/15 * * * *"]
+  }
+}

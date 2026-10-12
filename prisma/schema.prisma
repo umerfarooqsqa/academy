@@ -1,0 +1,301 @@
+// Tutor-Parent Matching Platform — Prisma schema.
+// Shape is defined by CLAUDE.md Section 5. Extend only if a real gap is found,
+// and surface any schema change to the operator per the Section 2 decision protocol.
+//
+// 2026-09-15: rewritten to match Section 5 exactly after the operator's scope
+// update (subjectGroup hard filter, tutor tiers/subscriptions, delivery mode,
+// grade-backed scoring, opportunity publishing, SystemState singleton table).
+
+// Driver-adapter client — required for the Cloudflare Workers/Hyperdrive deploy
+// target (2026-10-12 deviation, see CLAUDE.md Section 4). lib/db.ts always
+// builds the client via @prisma/adapter-pg now, in every environment. Driver
+// adapters are GA as of this Prisma version (6.19.3) — no previewFeatures flag
+// needed. Verified live: plain `prisma generate` (no `--no-engine`) is what
+// actually works with the `adapter` option on this version — passing
+// `--no-engine` throws "Prisma Client was configured to use the `adapter`
+// option but `prisma generate` was run with `--no-engine`" at runtime. This
+// contradicts older Cloudflare/Prisma docs examples written against an earlier
+// Prisma release; trust this comment over those if they're ever re-checked.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tutor {
+  id                 String    @id @default(cuid())
+  whatsappId         String    @unique
+  campaignId         String?
+  campaign           Campaign? @relation(fields: [campaignId], references: [id])
+  name               String
+  email              String?
+  phone              String? // callback number, only if different from whatsappId — never force-asked
+  qualification      String // e.g. "O-levels, A-levels"
+  subjects           String[] // e.g. ["Chemistry", "Biology"]
+  subjectGroup       String // "pre_medical" | "pre_engineering" | "computer" | "skills" |
+  // "university_level" | "other" — 6.1 step 8. This is the hard-filter
+  // field in matching (6.3 Step 1); `curriculum` below is descriptive only.
+  curriculum         String // free-text board/level, e.g. "Cambridge A-levels", "FSc Pre-Medical"
+  gradesBySubject    Json? // self-reported, e.g. {"Biology": "A"} — 6.1 step 9, scored in 6.3 Step 4
+  cnicImageUrl       String? // Supabase Storage URL — verification only, never OCR'd (6.1 step 10)
+  marksheetImageUrls String[] @default([])
+  area               String // AreaZone.name — landmark classified to nearest zone (6.1 step 11)
+  latitude           Float? // unused by the matching engine (zone-based, not GPS); kept for
+  // possible future precision, not populated by default
+  longitude          Float?
+  availability       String[] // fixed tag set only (6.2) — never free text
+  expectedFee        Int? // monthly fee in PKR — neutral-default handling when unset (6.3 Step 4)
+  rating             Float     @default(0) // running average of parent star ratings (1-5)
+  ratingCount        Int       @default(0)
+  tier               String    @default("free") // "free" | "premium" — derived live from an active
+  // TutorSubscription at notification time (6.5), never cached
+  deliveryMode       String    @default("in_person") // "in_person" | "online" | "both" (6.5)
+  radiusOverrideKm   Float? // premium-only wider matching radius opt-in (6.5)
+  status             String    @default("pending") // pending | active | inactive
+  internalNote       String? // operator-facing flags, e.g. "curriculum ambiguous — verify" —
+  // never shown to the tutor/parent. Same field name/purpose used
+  // consistently across every model below.
+  rawMessage         String // original WhatsApp text, kept for audit/training
+  createdAt          DateTime  @default(now())
+
+  subscriptions TutorSubscription[]
+  matches       Match[]
+  ratings       Rating[]
+
+  @@index([status])
+  @@index([campaignId])
+  @@index([area])
+}
+
+model TutorSubscription {
+  id            String   @id @default(cuid())
+  tutorId       String
+  tutor         Tutor    @relation(fields: [tutorId], references: [id])
+  status        String   @default("active") // active | lapsed | cancelled
+  amount        Int // monthly registration fee, in PKR
+  paymentMethod String? // free text for the operator's own record only — e.g. "JazzCash manual
+  // transfer", "bank transfer", "cash". NOT a payment gateway integration;
+  // this row is created manually by the operator (6.5), no webhook exists.
+  periodStart   DateTime
+  periodEnd     DateTime // Tutor.tier is "premium" only while now() is within an active
+  // subscription's period — checked live, not cached on Tutor
+  createdAt     DateTime @default(now())
+
+  @@index([tutorId])
+}
+
+model ParentRequest {
+  id           String    @id @default(cuid())
+  whatsappId   String
+  campaignId   String? // attributed via Meta ad-referral webhook (6.1) or manually tagged by
+  // the operator for non-Meta-ad channels. Null = unattributed, expected.
+  campaign     Campaign? @relation(fields: [campaignId], references: [id])
+  studentInfo  String?
+  subjects     String[]
+  subjectGroup String // same fixed set as Tutor.subjectGroup — the matching hard filter (6.3 Step 1)
+  curriculum   String
+  area         String
+  budget       Int? // frequently null — expected, handled gracefully (6.3 Step 3), never a hard reject
+  deliveryMode String    @default("in_person") // "in_person" | "online" | "both" — determines whether
+  // Tier A/B geo-filtering applies in matching (6.3 Step 2)
+  availability String[] // fixed tag set only (6.2) — never free text
+  status       String    @default("pending") // pending | matched | closed
+  internalNote String? // e.g. "curriculum ambiguous — verify", "budget not provided — confirm with parent"
+  rawMessage   String
+  createdAt    DateTime  @default(now())
+  // Not in CLAUDE.md Section 5 — added for the neglected-parent email alert
+  // (2026-10 planning session), flagged for operator sign-off (Section 2),
+  // same precedent as Match.notifyAt/Payment.ratingRequestedAt. Last time a
+  // neglect digest included this request (null = never alerted) — lets the
+  // 3-hour alert both fire once and repeat every 3h while still unresolved.
+  neglectAlertedAt DateTime?
+
+  matches Match[]
+
+  @@index([status])
+  @@index([campaignId])
+  @@index([area])
+}
+
+model IntakeSession {
+  id          String   @id @default(cuid())
+  whatsappId  String   @unique
+  senderType  String // "tutor" | "parent" | "unknown" — determined on first message
+  step        String // current step in the per-whatsappId form flow, e.g. "awaiting_area" (6.1 step 3)
+  partialData Json? // fields collected so far, merged in as follow-up answers arrive
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
+model AreaZone {
+  id        String @id @default(cuid())
+  name      String @unique
+  latitude  Float
+  longitude Float
+  maxKm     Float  @default(6) // max distance for a Tier B match involving this zone (6.3 Step 2)
+}
+
+model Match {
+  id                String        @id @default(cuid())
+  parentRequestId   String
+  parentRequest     ParentRequest @relation(fields: [parentRequestId], references: [id])
+  tutorId           String
+  tutor             Tutor         @relation(fields: [tutorId], references: [id])
+  score             Float
+  status            String        @default("awaiting_approval")
+  // awaiting_approval | approved | rejected | sent_to_parent | selected | demo_scheduled | paid | completed
+  internalNote      String? // e.g. "budget not provided — confirm with parent" (6.3 Step 3)
+  opportunityCode   String?       @unique // short reference (e.g. "OPP-1234") shown on the public
+  // /opportunities page (6.5, 7) — generated when published, null
+  // while still in the premium-only notification window
+  // notifyAt/interestedTutorId are NOT in Section 5's Match model listing, but
+  // 6.5 step 7 explicitly names "a `notifyAt` timestamp on the Match, checked by
+  // POST /api/matches/check-notification-delay" and steps 4-5 require tracking
+  // which tutor confirmed interest — the workflow is unimplementable without
+  // them. Added here; flagged for operator sign-off (Section 2).
+  notifyAt          DateTime? // when the premium-only window ends and this Match becomes eligible
+  // for public/free-tier publishing (6.5 step 7)
+  publishedToPageAt DateTime? // when this Match became visible on /opportunities — null until
+  // the premium delay window (6.5) elapses with no confirmed tutor
+  interestedTutorId String? // tutor who confirmed interest (premium YES reply or OPP-XXXX self-interest, 6.5)
+  demoSlots         Json? // candidate times the operator offers, entered manually in /matches (6.6)
+  demoScheduledAt   DateTime? // the slot the parent actually confirmed
+  createdAt         DateTime      @default(now())
+  // Same neglected-parent alert addition as ParentRequest.neglectAlertedAt
+  // above — tracks a Match stuck at status "awaiting_approval" (the operator
+  // forgot to review it, 6.4). Not in Section 5, flagged for sign-off (Section 2).
+  neglectAlertedAt  DateTime?
+
+  approvalLogs ApprovalLog[]
+  payments     Payment[]
+  ratings      Rating[]
+
+  @@index([status])
+  @@index([parentRequestId])
+  @@index([tutorId])
+}
+
+model ApprovalLog {
+  id        String   @id @default(cuid())
+  matchId   String
+  match     Match    @relation(fields: [matchId], references: [id])
+  action    String // approved | rejected | edited
+  before    Json? // proposed match data
+  after     Json? // what the operator actually did — correction data for future tuning
+  createdAt DateTime @default(now())
+
+  @@index([matchId])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  matchId     String
+  match       Match    @relation(fields: [matchId], references: [id])
+  amount      Int
+  commission  Int
+  tutorPayout Int
+  status      String   @default("pending") // pending | collected | paid_out
+  provider    String   @default("jazzcash")
+  createdAt   DateTime @default(now())
+  // Not in Section 5's Payment model — added to make the 6.8-step-1 rating
+  // request idempotent (fire once, exactly RATING_REQUEST_DELAY_DAYS after
+  // collection, never re-sent on every periodic check). Flagged for operator
+  // sign-off alongside Match.notifyAt/interestedTutorId below.
+  ratingRequestedAt DateTime?
+
+  @@index([status])
+  @@index([matchId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  matchId   String
+  match     Match    @relation(fields: [matchId], references: [id])
+  tutorId   String
+  tutor     Tutor    @relation(fields: [tutorId], references: [id])
+  stars     Int // 1-5, submitted by parent — feeds Tutor.rating running average (6.8)
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@index([tutorId])
+  @@index([matchId])
+}
+
+model MarketingSpend {
+  id         String    @id @default(cuid())
+  campaignId String? // nullable for one-off/general spend not tied to a specific campaign test
+  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+  channel    String // "meta_ads" | "tutor_referral" | "organic_post" | "other" — same fixed set as Campaign.channel
+  area       String? // AreaZone.name this spend targeted, null if general
+  // platform/subjectGroup: not in CLAUDE.md Section 5 — added for the marketing
+  // balance sheet + budget recommendation module (2026-10 planning session),
+  // flagged for operator sign-off per Section 2. Plain nullable strings, not
+  // Postgres enums, matching channel/subjectGroup's existing pattern elsewhere.
+  // Falls back to the parent Campaign's platform/subjectGroup when unset and
+  // campaignId is set.
+  platform     String? // "facebook" | "instagram" | "tiktok" | "youtube" | "other" (lib/marketing/platforms.ts)
+  subjectGroup String? // same fixed set as Tutor/ParentRequest.subjectGroup
+  amount     Int // in PKR
+  spentOn    DateTime // date spend occurred (not createdAt) — for accurate period reports
+  notes      String?
+  createdAt  DateTime  @default(now())
+
+  @@index([campaignId])
+  @@index([spentOn])
+}
+
+// Not in CLAUDE.md Section 5 at all — Section 12 explicitly lists "no
+// multi-tenant auth system" as a non-goal. This is a deliberate reversal of
+// that, requested directly by the operator (2026-10 planning session), not an
+// incremental addition — flagged prominently per Section 2. CLAUDE.md itself
+// should be updated to record this decision for future sessions.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String // "<saltHex>:<hashHex>" — node:crypto scrypt, see lib/auth/passwords.ts
+  role         String   @default("staff") // "admin" | "staff" — admin-only: user
+  // management, Payments, Finance, Campaigns, Marketing (the "money" pages)
+  status       String   @default("active") // "active" | "disabled" — disable, never
+  // hard-delete, so ApprovalLog/audit references to this user stay meaningful
+  createdAt    DateTime @default(now())
+}
+
+model SystemState {
+  key       String   @id // e.g. "last_facebook_digest_posted_at" — a generic, reusable
+  // key-value slot for small singleton state, avoiding a proliferation
+  // of one-purpose tables for things like "did the daily digest already run today"
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Campaign {
+  id           String    @id @default(cuid())
+  name         String // e.g. "Meta Ads - North Nazimabad - Audience A (exam-prep interest)"
+  channel      String // "meta_ads" | "tutor_referral" | "organic_post" | "other"
+  area         String?
+  audienceNote String? // targeting description — this is what makes two campaigns a real A/B pair
+  // platform/subjectGroup: not in CLAUDE.md Section 5 — same addition/rationale
+  // as MarketingSpend.platform/subjectGroup above (marketing balance sheet module).
+  platform     String? // "facebook" | "instagram" | "tiktok" | "youtube" | "other" (lib/marketing/platforms.ts)
+  subjectGroup String? // same fixed set as Tutor/ParentRequest.subjectGroup
+  metaAdId     String?   @unique // Meta's ad ID, set only for channel="meta_ads". Matches the inbound
+  // webhook's `referral` payload silently (6.1, 6.10) — no visible code or link.
+  startDate    DateTime  @default(now())
+  endDate      DateTime?
+  createdAt    DateTime  @default(now())
+
+  tutors          Tutor[]
+  parentRequests  ParentRequest[]
+  marketingSpends MarketingSpend[]
+}
+
+// Webhook idempotency: Meta re-delivers a webhook if we don't 200 quickly, so we
+// record each processed inbound message id and skip duplicates. Not in Section 5 —
+// added because reliable webhook handling genuinely needs it.
+model ProcessedInboundMessage {
+  id        String   @id // WhatsApp message id
+  createdAt DateTime @default(now())
+}
