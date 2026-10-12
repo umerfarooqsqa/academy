@@ -1,0 +1,33 @@
+name: Deploy to Cloudflare Workers
+
+# 2026-10-12 — CLAUDE.md Section 4 deviation (Cloudflare Workers hosting).
+# Runs on Cloudflare's own Linux runners, not the operator's Windows machine —
+# sidesteps @opennextjs/cloudflare's "not fully compatible with Windows"
+# caveat entirely for day-to-day deploys. Requires one repo secret:
+# CLOUDFLARE_API_TOKEN (Workers Scripts: Edit permission) — set it under
+# Settings > Secrets and variables > Actions in this repo.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npm run cf:build
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: deploy
