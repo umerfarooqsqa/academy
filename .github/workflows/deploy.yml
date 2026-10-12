@@ -39,6 +39,12 @@ jobs:
           # Worker's real Hyperdrive binding comes from wrangler.jsonc's `id`
           # field regardless — so a syntactically-valid placeholder is fine.
           CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: "postgresql://user:pass@localhost:5432/placeholder"
+          # The scoped "Edit Cloudflare Workers" API token doesn't include
+          # account-listing permission, so Wrangler's own account
+          # auto-detection fails ("Failed to automatically retrieve account
+          # IDs") — verified live. Not a secret, just an identifier; from
+          # `wrangler whoami` (Umerfarooqsqa@gmail.com's Account).
+          CLOUDFLARE_ACCOUNT_ID: "f0a99462abbc2d4caa90b7c2d936ee93"
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: deploy
