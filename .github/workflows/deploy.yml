@@ -28,6 +28,17 @@ jobs:
       - run: npm run cf:build
 
       - uses: cloudflare/wrangler-action@v3
+        env:
+          # `opennextjs-cloudflare deploy` (which `wrangler deploy` calls into
+          # for this project) reads Worker bindings via Wrangler's local-
+          # emulation API (getPlatformProxy) as part of its own deploy prep —
+          # verified live in this exact CI job: without this var present it
+          # throws "you should use a local Postgres connection string to
+          # emulate Hyperdrive" and fails before ever reaching the real
+          # deploy. This value is never actually connected to — the deployed
+          # Worker's real Hyperdrive binding comes from wrangler.jsonc's `id`
+          # field regardless — so a syntactically-valid placeholder is fine.
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: "postgresql://user:pass@localhost:5432/placeholder"
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: deploy
