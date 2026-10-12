@@ -3,10 +3,16 @@ import { dirname } from "node:path";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 // Lets `next dev` read Cloudflare bindings (Hyperdrive, etc.) locally via
-// getCloudflareContext() without needing `wrangler dev` — purely additive,
-// does not change local dev when no bindings are configured (lib/db.ts falls
-// back to DATABASE_URL either way, see that file's comment).
-initOpenNextCloudflareForDev();
+// getCloudflareContext() without needing `wrangler dev`. Dev-server only —
+// verified live that calling this unconditionally also fires during `next
+// build` (local and in CI), where it demands a local Postgres connection
+// string to emulate Hyperdrive (the exact error this project hit locally
+// before this guard was added) even though production builds never need
+// local emulation at all. Skipping it outside the dev server avoids that
+// entirely; lib/db.ts falls back to DATABASE_URL regardless during build.
+if (process.env.NODE_ENV === "development") {
+  initOpenNextCloudflareForDev();
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
