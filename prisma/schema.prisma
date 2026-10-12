@@ -8,16 +8,25 @@
 
 // Driver-adapter client — required for the Cloudflare Workers/Hyperdrive deploy
 // target (2026-10-12 deviation, see CLAUDE.md Section 4). lib/db.ts always
-// builds the client via @prisma/adapter-pg now, in every environment. Driver
-// adapters are GA as of this Prisma version (6.19.3) — no previewFeatures flag
-// needed. Verified live: plain `prisma generate` (no `--no-engine`) is what
-// actually works with the `adapter` option on this version — passing
-// `--no-engine` throws "Prisma Client was configured to use the `adapter`
-// option but `prisma generate` was run with `--no-engine`" at runtime. This
-// contradicts older Cloudflare/Prisma docs examples written against an earlier
-// Prisma release; trust this comment over those if they're ever re-checked.
+// builds the client via @prisma/adapter-pg now, in every environment.
+//
+// `engineType = "client"` (GA since Prisma 6.16) is the real, current switch
+// for a Rust-engine-free client that exclusively uses the driver adapter — not
+// the CLI `--no-engine` flag, which is a different/older mechanism. Verified
+// live the hard way: plain `prisma generate` (default engineType) builds a
+// client that bundles a native engine binary for whatever OS generated it
+// (Windows, in this project's case) and SILENTLY still tries to use that
+// native engine for some queries even with `adapter` passed to the
+// constructor — this only surfaces once deployed somewhere that binary can't
+// run (Cloudflare Workers: "Prisma Client could not locate the Query Engine
+// for runtime debian-openssl-1.1.x"), not locally. `prisma generate --no-engine`
+// isn't the fix either — it throws a validation error against `adapter` in
+// this Prisma version. `engineType = "client"` below is the one that's
+// actually confirmed working end-to-end (local + deployed).
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "client"
+  runtime    = "workerd"
 }
 
 datasource db {

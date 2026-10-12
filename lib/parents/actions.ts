@@ -2,10 +2,10 @@
 // two failure modes (pending ParentRequests, Matches stuck awaiting approval),
 // delegates the "who's actually due an alert" decision to the pure function,
 // sends one digest email via Resend, and stamps neglectAlertedAt on everything
-// included so the next check (every 15 min, vercel.json) doesn't re-send until
-// it's genuinely due again.
+// included so the next check (every 15 min, wrangler.jsonc's triggers.crons)
+// doesn't re-send until it's genuinely due again.
 
-import { prisma } from "@/lib/db";
+import { prisma, transactionClient } from "@/lib/db";
 import { config } from "@/lib/config";
 import { sendEmail } from "@/lib/email/resend";
 import { buildNeglectDigest, type NeglectedParentRow, type NeglectedMatchRow } from "@/lib/parents/neglect";
@@ -60,9 +60,11 @@ export async function sendNeglectDigestIfNeeded(now: Date = new Date()): Promise
     return { sent: false, parentCount: digest.parentIds.length, matchCount: digest.matchIds.length, error: result.error };
   }
 
-  await prisma.$transaction([
-    ...digest.parentIds.map((id) => prisma.parentRequest.update({ where: { id }, data: { neglectAlertedAt: now } })),
-    ...digest.matchIds.map((id) => prisma.match.update({ where: { id }, data: { neglectAlertedAt: now } })),
+  // Built against one explicit client — see lib/db.ts#transactionClient's comment.
+  const txClient = transactionClient();
+  await txClient.$transaction([
+    ...digest.parentIds.map((id) => txClient.parentRequest.update({ where: { id }, data: { neglectAlertedAt: now } })),
+    ...digest.matchIds.map((id) => txClient.match.update({ where: { id }, data: { neglectAlertedAt: now } })),
   ]);
 
   return { sent: true, parentCount: digest.parentIds.length, matchCount: digest.matchIds.length };

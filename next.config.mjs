@@ -25,6 +25,16 @@ const nextConfig = {
   // bundling — they need to stay as real Node dependencies for the Workers
   // nodejs_compat runtime, per @opennextjs/cloudflare's documented Prisma setup.
   serverExternalPackages: ["@prisma/client", ".prisma/client", "pg"],
+  // Marking .prisma/client "external" above stops Next from bundling it, but
+  // ALSO stops Next's own file-tracer from copying its runtime files (the
+  // generated loader .js/.mjs files and, critically, query_compiler_bg.wasm)
+  // into the deployment output — verified live: without this, only
+  // schema.prisma made it into .open-next's bundled node_modules, and
+  // Cloudflare correctly runs engineType="client" + runtime="workerd"'s
+  // import()-based wasm loader if and only if the wasm file actually ships.
+  outputFileTracingIncludes: {
+    "/**": ["./node_modules/.prisma/client/**"],
+  },
 };
 
 export default nextConfig;

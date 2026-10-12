@@ -7,7 +7,7 @@
 // for approval (6.4). Never runs matching logic itself — that stays 100%
 // deterministic and DB-free in engine.ts.
 
-import { prisma } from "@/lib/db";
+import { prisma, transactionClient } from "@/lib/db";
 import { notifyOperator } from "@/lib/whatsapp/client";
 import { computeLiveTier } from "@/lib/tutors/tier";
 import { runMatchingEngine, type TutorCandidate } from "@/lib/matching/engine";
@@ -71,9 +71,13 @@ export async function runMatchingForParent(parentRequestId: string): Promise<Mat
     return { parentRequestId, matchesCreated: 0, matchIds: [], note: "No candidates passed the hard filters." };
   }
 
-  const created = await prisma.$transaction(
+  // Built against one explicit client (not the plain `prisma` export) —
+  // $transaction requires every batched operation to come from the same
+  // client instance, see lib/db.ts#transactionClient's comment.
+  const txClient = transactionClient();
+  const created = await txClient.$transaction(
     results.map((r) =>
-      prisma.match.create({
+      txClient.match.create({
         data: {
           parentRequestId: pr.id,
           tutorId: r.tutorId,

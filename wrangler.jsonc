@@ -18,13 +18,13 @@
     "binding": "ASSETS"
   },
   // Bridges the Worker to the real Supabase Postgres instance over TCP —
-  // Workers can't open raw TCP connections on their own. Replace <id> with
-  // the id from `npx wrangler hyperdrive create` (built from the Supabase
-  // connection string) — an operator setup step, not a code value.
+  // Workers can't open raw TCP connections on their own. Created 2026-10-12
+  // via `npx wrangler hyperdrive create academy-db --connection-string=...`
+  // against the real Supabase project (flqguuitpmlprfadhlnr).
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "<hyperdrive-id-from-operator-setup>"
+      "id": "55e9e7f55d7e4911902d698fbd0d8641"
     }
   ],
   // Same two schedules vercel.json's `crons` array had — the daily Facebook
