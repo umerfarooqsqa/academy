@@ -64,8 +64,11 @@ export default async function PublicLayout({ children }: { children: React.React
       <main>{children}</main>
 
       <footer className="border-t-2 border-gray-900/5 py-8">
-        <div className="mx-auto max-w-6xl px-4 text-center text-sm text-gray-500 sm:px-6">
-          © {new Date().getFullYear()} {content.siteName}
+        <div className="mx-auto max-w-6xl px-4 text-center sm:px-6">
+          <p className="text-sm text-gray-500">
+            © {new Date().getFullYear()} {content.siteName}
+          </p>
+          <p className="mt-1 text-xs text-gray-400">A registered company — part of Suntex Services.</p>
         </div>
       </footer>
     </div>
