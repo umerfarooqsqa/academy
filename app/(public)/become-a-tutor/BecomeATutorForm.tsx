@@ -4,15 +4,28 @@ import { useState } from "react";
 import { AVAILABILITY_TAGS } from "@/lib/messages";
 import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
 import { extractCoordsFromText } from "@/lib/geo/googleMapsLink";
-import { input, label, badge } from "@/app/components/ui";
 
-// Local "sticker" styles, not the shared admin `card`/`btnPrimary`/`btnSecondary`
-// — this public site intentionally has its own distinct look (2026-10-13 redesign).
+// Local "sticker" styles, not the shared admin `ui.ts` (which is the compact
+// internal-dashboard style — too small/cramped for a public, mobile-first
+// marketing form). 2026-10-13: bigger text, thicker borders, roomier touch
+// targets (py-3+ inputs, py-2.5+ chips) sized for comfortable tapping on a
+// phone, consistent with this page's existing card/button aesthetic.
 const card = "rounded-3xl border-2 border-gray-900 bg-white p-6 shadow-[5px_5px_0_0_#1f2937] sm:p-8";
 const btnPrimary =
   "rounded-full border-2 border-gray-900 bg-rose-500 px-6 py-3 text-base font-bold text-white shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50";
 const btnSecondary =
   "rounded-full border-2 border-gray-900 bg-white px-5 py-2.5 text-sm font-bold text-gray-900 shadow-[3px_3px_0_0_#1f2937] transition hover:-translate-y-0.5 active:translate-y-0 active:shadow-none";
+const label = "block text-sm font-bold text-gray-800 mb-1.5";
+const input =
+  "w-full rounded-xl border-2 border-gray-300 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 transition focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-200";
+const fileInput =
+  "w-full rounded-xl border-2 border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-600 transition focus:border-gray-900 focus:outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-sm file:font-bold file:text-white";
+
+function chip(active: boolean): string {
+  return active
+    ? "rounded-full border-2 border-gray-900 bg-teal-400 px-4 py-2.5 text-sm font-bold text-gray-900 shadow-[2px_2px_0_0_#1f2937] transition"
+    : "rounded-full border-2 border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-gray-600 transition hover:border-gray-900";
+}
 
 export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] }) {
   const [busy, setBusy] = useState(false);
@@ -90,7 +103,7 @@ export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] })
   }
 
   return (
-    <form onSubmit={submit} className={`${card} mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2`}>
+    <form onSubmit={submit} className={`${card} mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2`}>
       <div>
         <label className={label}>Full name</label>
         <input className={input} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -120,9 +133,9 @@ export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] })
         />
         {form.locationLink.trim() &&
           (extractCoordsFromText(form.locationLink) ? (
-            <p className="mt-1 text-xs font-semibold text-teal-700">📍 Location detected — this will be used instead of the Area dropdown</p>
+            <p className="mt-1.5 text-sm font-semibold text-teal-700">📍 Location detected — this will be used instead of the Area dropdown</p>
           ) : (
-            <p className="mt-1 text-xs text-gray-500">Doesn&apos;t look like a Google Maps link — the Area dropdown above will be used instead</p>
+            <p className="mt-1.5 text-sm text-gray-500">Doesn&apos;t look like a Google Maps link — the Area dropdown above will be used instead</p>
           ))}
       </div>
       <div>
@@ -154,9 +167,9 @@ export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] })
 
       <div className="sm:col-span-2">
         <label className={label}>Your grades in the subjects you teach</label>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           {grades.map((row, i) => (
-            <div key={i} className="flex gap-1.5">
+            <div key={i} className="flex gap-2">
               <input className={input} placeholder="Subject (e.g. Biology)" value={row.subject} onChange={(e) => updateGrade(i, "subject", e.target.value)} />
               <input className={input} placeholder="Grade (e.g. A-)" value={row.grade} onChange={(e) => updateGrade(i, "grade", e.target.value)} />
             </div>
@@ -171,7 +184,7 @@ export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] })
         <label className={label}>When are you generally available?</label>
         <div className="flex flex-wrap gap-2">
           {AVAILABILITY_TAGS.map((tag) => (
-            <button key={tag} type="button" onClick={() => toggleAvailability(tag)} className={form.availability.includes(tag) ? badge("blue") : badge("gray")}>
+            <button key={tag} type="button" onClick={() => toggleAvailability(tag)} className={chip(form.availability.includes(tag))}>
               {tag}
             </button>
           ))}
@@ -180,14 +193,14 @@ export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] })
 
       <div>
         <label className={label}>CNIC photo (recommended — needed to activate your profile)</label>
-        <input className={input} type="file" accept="image/*" onChange={(e) => setCnic(e.target.files?.[0] ?? null)} />
+        <input className={fileInput} type="file" accept="image/*" onChange={(e) => setCnic(e.target.files?.[0] ?? null)} />
       </div>
       <div>
         <label className={label}>Marksheet/transcript photo(s), optional</label>
-        <input className={input} type="file" accept="image/*" multiple onChange={(e) => setMarksheets(Array.from(e.target.files ?? []))} />
+        <input className={fileInput} type="file" accept="image/*" multiple onChange={(e) => setMarksheets(Array.from(e.target.files ?? []))} />
       </div>
 
-      {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+      {error && <p className="text-sm font-semibold text-red-600 sm:col-span-2">{error}</p>}
       <div className="sm:col-span-2">
         <button className={btnPrimary} disabled={busy} type="submit">
           {busy ? "Submitting…" : "Register"}

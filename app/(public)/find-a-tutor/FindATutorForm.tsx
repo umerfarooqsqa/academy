@@ -4,13 +4,24 @@ import { useState } from "react";
 import { AVAILABILITY_TAGS } from "@/lib/messages";
 import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
 import { extractCoordsFromText } from "@/lib/geo/googleMapsLink";
-import { input, label, badge } from "@/app/components/ui";
 
-// Local "sticker" styles, not the shared admin `card`/`btnPrimary` — this
-// public site intentionally has its own distinct look (2026-10-13 redesign).
+// Local "sticker" styles, not the shared admin `ui.ts` (which is the compact
+// internal-dashboard style — too small/cramped for a public, mobile-first
+// marketing form). 2026-10-13: bigger text, thicker borders, roomier touch
+// targets (py-3+ inputs, py-2.5+ chips) sized for comfortable tapping on a
+// phone, consistent with this page's existing card/button aesthetic.
 const card = "rounded-3xl border-2 border-gray-900 bg-white p-6 shadow-[5px_5px_0_0_#1f2937] sm:p-8";
 const btnPrimary =
   "rounded-full border-2 border-gray-900 bg-rose-500 px-6 py-3 text-base font-bold text-white shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50";
+const label = "block text-sm font-bold text-gray-800 mb-1.5";
+const input =
+  "w-full rounded-xl border-2 border-gray-300 bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400 transition focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-200";
+
+function chip(active: boolean): string {
+  return active
+    ? "rounded-full border-2 border-gray-900 bg-teal-400 px-4 py-2.5 text-sm font-bold text-gray-900 shadow-[2px_2px_0_0_#1f2937] transition"
+    : "rounded-full border-2 border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-gray-600 transition hover:border-gray-900";
+}
 
 export default function FindATutorForm({ zoneNames }: { zoneNames: string[] }) {
   const [busy, setBusy] = useState(false);
@@ -68,7 +79,7 @@ export default function FindATutorForm({ zoneNames }: { zoneNames: string[] }) {
   }
 
   return (
-    <form onSubmit={submit} className={`${card} mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2`}>
+    <form onSubmit={submit} className={`${card} mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2`}>
       <div>
         <label className={label}>Your WhatsApp number</label>
         <input className={input} required value={form.whatsappId} onChange={(e) => setForm({ ...form, whatsappId: e.target.value })} />
@@ -94,9 +105,9 @@ export default function FindATutorForm({ zoneNames }: { zoneNames: string[] }) {
         />
         {form.locationLink.trim() &&
           (extractCoordsFromText(form.locationLink) ? (
-            <p className="mt-1 text-xs font-semibold text-teal-700">📍 Location detected — this will be used instead of the Area dropdown</p>
+            <p className="mt-1.5 text-sm font-semibold text-teal-700">📍 Location detected — this will be used instead of the Area dropdown</p>
           ) : (
-            <p className="mt-1 text-xs text-gray-500">Doesn&apos;t look like a Google Maps link — the Area dropdown above will be used instead</p>
+            <p className="mt-1.5 text-sm text-gray-500">Doesn&apos;t look like a Google Maps link — the Area dropdown above will be used instead</p>
           ))}
       </div>
       <div className="sm:col-span-2">
@@ -137,13 +148,13 @@ export default function FindATutorForm({ zoneNames }: { zoneNames: string[] }) {
         <label className={label}>When works for you?</label>
         <div className="flex flex-wrap gap-2">
           {AVAILABILITY_TAGS.map((tag) => (
-            <button key={tag} type="button" onClick={() => toggleAvailability(tag)} className={form.availability.includes(tag) ? badge("blue") : badge("gray")}>
+            <button key={tag} type="button" onClick={() => toggleAvailability(tag)} className={chip(form.availability.includes(tag))}>
               {tag}
             </button>
           ))}
         </div>
       </div>
-      {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+      {error && <p className="text-sm font-semibold text-red-600 sm:col-span-2">{error}</p>}
       <div className="sm:col-span-2">
         <button className={btnPrimary} disabled={busy} type="submit">
           {busy ? "Submitting…" : "Find my tutor"}
