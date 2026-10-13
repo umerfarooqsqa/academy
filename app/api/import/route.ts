@@ -22,6 +22,7 @@ import {
   InvalidExportError,
 } from "@/lib/import/media";
 import { extractTutorFromConversation, extractParentFromConversation } from "@/lib/llm/extract";
+import { extractCoordsFromText } from "@/lib/geo/googleMapsLink";
 import { classifyCurriculum, CURRICULUM_AMBIGUOUS_NOTE } from "@/lib/intake/curriculum";
 import { upsertTutor, createParentRequest, recordTutorDocument } from "@/lib/intake/persist";
 import { classifyDocumentSlot, buildDocumentStoragePath } from "@/lib/intake/documents";
@@ -73,11 +74,16 @@ export async function POST(req: Request) {
   const messages = parseWhatsAppExport(transcript);
   const formattedTranscript = formatTranscript(messages);
   const mediaFilenames = collectMediaFilenames(messages);
+  // Pulled out by plain code, in parallel with (not instead of) the LLM
+  // extraction call below — Section 3's "LLM does language only" stays
+  // intact; a shared location always renders as a plain-text maps.google.com
+  // link in the export (lib/geo/googleMapsLink.ts), never a prompt input.
+  const sharedLocation = extractCoordsFromText(formattedTranscript);
 
   if (senderType === "tutor") {
-    return handleTutorImport(whatsappId, formattedTranscript, mediaFilenames, images, campaignIdValue);
+    return handleTutorImport(whatsappId, formattedTranscript, mediaFilenames, images, campaignIdValue, sharedLocation);
   }
-  return handleParentImport(whatsappId, formattedTranscript, campaignIdValue);
+  return handleParentImport(whatsappId, formattedTranscript, campaignIdValue, sharedLocation);
 }
 
 async function handleTutorImport(
@@ -86,6 +92,7 @@ async function handleTutorImport(
   mediaFilenames: string[],
   images: Map<string, Buffer>,
   campaignId: string | null,
+  sharedLocation: { latitude: number; longitude: number } | null,
 ) {
   let extraction;
   try {
@@ -94,6 +101,10 @@ async function handleTutorImport(
     return NextResponse.json({ error: `Extraction failed: ${(err as Error).message}` }, { status: 502 });
   }
   const draft = extraction.data as TutorDraft;
+  if (sharedLocation) {
+    draft.preciseLatitude = sharedLocation.latitude;
+    draft.preciseLongitude = sharedLocation.longitude;
+  }
 
   if (draft.curriculum) {
     const verdict = classifyCurriculum(draft.curriculum);
@@ -165,7 +176,12 @@ async function handleTutorImport(
   return NextResponse.json({ tutor, declined: false, activated: status === "active", missingFields: missing });
 }
 
-async function handleParentImport(whatsappId: string, transcript: string, campaignId: string | null) {
+async function handleParentImport(
+  whatsappId: string,
+  transcript: string,
+  campaignId: string | null,
+  sharedLocation: { latitude: number; longitude: number } | null,
+) {
   let extraction;
   try {
     extraction = await extractParentFromConversation(transcript);
@@ -173,6 +189,10 @@ async function handleParentImport(whatsappId: string, transcript: string, campai
     return NextResponse.json({ error: `Extraction failed: ${(err as Error).message}` }, { status: 502 });
   }
   const draft = extraction.data as ParentDraft;
+  if (sharedLocation) {
+    draft.preciseLatitude = sharedLocation.latitude;
+    draft.preciseLongitude = sharedLocation.longitude;
+  }
 
   if (draft.curriculum) {
     const verdict = classifyCurriculum(draft.curriculum);

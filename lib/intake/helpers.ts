@@ -49,6 +49,10 @@ export interface TutorDraft {
   area?: string | null;
   availability?: string[] | null;
   expectedFee?: number | null;
+  // Set when a shared Google Maps location link was found (lib/geo/googleMapsLink.ts)
+  // — a bonus precision signal, never required, never part of missingTutorFields.
+  preciseLatitude?: number | null;
+  preciseLongitude?: number | null;
 }
 
 export interface ParentDraft {
@@ -60,6 +64,10 @@ export interface ParentDraft {
   budget?: number | null;
   deliveryMode?: string | null;
   availability?: string[] | null;
+  // Set when a shared Google Maps location link was found (lib/geo/googleMapsLink.ts)
+  // — a bonus precision signal, never required, never part of missingParentFields.
+  preciseLatitude?: number | null;
+  preciseLongitude?: number | null;
 }
 
 export interface PartialData {

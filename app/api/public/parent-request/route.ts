@@ -12,6 +12,7 @@ import { createParentRequest } from "@/lib/intake/persist";
 import { missingParentFields, type ParentDraft } from "@/lib/intake/helpers";
 import { runMatchingForParent } from "@/lib/matching/run";
 import { CURRICULUM_DECLINE } from "@/lib/messages";
+import { extractCoordsFromText } from "@/lib/geo/googleMapsLink";
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -30,6 +31,17 @@ export async function POST(req: Request) {
     deliveryMode: body.deliveryMode || "in_person",
     availability: Array.isArray(body.availability) ? body.availability.filter(Boolean) : null,
   };
+
+  // Never trust client-side extraction for the authoritative value — the
+  // server re-parses the pasted link itself. A non-Maps link or garbled
+  // paste is silently ignored and the dropdown's `area` value is used instead.
+  if (typeof body.locationLink === "string" && body.locationLink.trim()) {
+    const coords = extractCoordsFromText(body.locationLink);
+    if (coords) {
+      draft.preciseLatitude = coords.latitude;
+      draft.preciseLongitude = coords.longitude;
+    }
+  }
 
   const missing = missingParentFields(draft);
   if (missing.length > 0) {

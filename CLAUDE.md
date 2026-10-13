@@ -109,8 +109,11 @@ model Tutor {
   cnicImageUrl       String?  // Supabase Storage URL — verification only, never OCR'd (6.1 step 10)
   marksheetImageUrls String[] @default([])
   area               String   // AreaZone.name — landmark classified to nearest zone (6.1 step 11)
-  latitude           Float?   // unused by the matching engine (zone-based, not GPS); kept for
-                               // possible future precision, not populated by default
+  latitude           Float?   // populated from the matched AreaZone's centroid by default, or
+                               // overridden with a precise coordinate when a shared Google Maps
+                               // location link is found (lib/geo/googleMapsLink.ts — **deviation,
+                               // 2026-10-13**, see note below) — still never used by the matching
+                               // engine's hard filters, which stay zone-name-based (6.3)
   longitude          Float?
   availability       String[] // fixed tag set only (6.2) — never free text
   expectedFee        Int?     // monthly fee in PKR — neutral-default handling when unset (6.3 Step 4)
@@ -158,6 +161,12 @@ model ParentRequest {
   subjectGroup  String   // same fixed set as Tutor.subjectGroup — the matching hard filter (6.3 Step 1)
   curriculum    String
   area          String
+  latitude      Float?   // **deviation, 2026-10-13**: not in the original Section 5 shape — added
+                          // alongside Tutor.latitude/longitude for the Google-Maps-location-link
+                          // feature (lib/geo/googleMapsLink.ts). Populated only when a shared
+                          // location link was found; null otherwise. Never used by the matching
+                          // engine's hard filters, which stay zone-name-based (6.3).
+  longitude     Float?
   budget        Int?     // frequently null — expected, handled gracefully (6.3 Step 3), never a hard reject
   deliveryMode  String   @default("in_person") // "in_person" | "online" | "both" — determines whether
                           // Tier A/B geo-filtering applies in matching (6.3 Step 2)

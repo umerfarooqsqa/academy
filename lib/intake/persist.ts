@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import type { TutorDraft, ParentDraft } from "@/lib/intake/helpers";
 import type { DocKind } from "@/lib/intake/documents";
+import { findNearestZone } from "@/lib/geo/nearestZone";
 
 /** Case-insensitive lookup of the AreaZone a free-text area string refers to. */
 export async function resolveZone(area: string) {
@@ -17,6 +18,33 @@ export async function resolveZone(area: string) {
 
 const ZONE_UNMATCHED_NOTE = "area not in zone table — add the zone or correct the area";
 
+/** Resolves the zone/area + lat/long for a draft that may include a precise
+ * coordinate from a shared Google Maps location link (lib/geo/googleMapsLink.ts).
+ * When present, the precise coordinate wins over the free-text `area` guess —
+ * it overrides both the matched zone (nearest by Haversine distance, not LLM
+ * guess) and the stored latitude/longitude (the true coordinate, not the
+ * zone's centroid). Falls back to the existing name-based resolveZone()
+ * behavior when no precise coordinate is present — completely unchanged for
+ * the common case. */
+async function resolveAreaAndCoords(draft: { area?: string | null; preciseLatitude?: number | null; preciseLongitude?: number | null }) {
+  if (draft.preciseLatitude != null && draft.preciseLongitude != null) {
+    const zone = await findNearestZone(draft.preciseLatitude, draft.preciseLongitude);
+    return {
+      zone,
+      areaName: zone?.name ?? draft.area ?? "",
+      latitude: draft.preciseLatitude,
+      longitude: draft.preciseLongitude,
+    };
+  }
+  const zone = draft.area ? await resolveZone(draft.area) : null;
+  return {
+    zone,
+    areaName: draft.area ?? "",
+    latitude: zone?.latitude ?? null,
+    longitude: zone?.longitude ?? null,
+  };
+}
+
 export async function upsertTutor(opts: {
   whatsappId: string;
   draft: TutorDraft;
@@ -26,7 +54,7 @@ export async function upsertTutor(opts: {
   internalNote?: string | null;
 }) {
   const { whatsappId, draft, rawMessage, campaignId, status } = opts;
-  const zone = draft.area ? await resolveZone(draft.area) : null;
+  const { zone, areaName, latitude, longitude } = await resolveAreaAndCoords(draft);
   const notes = [opts.internalNote, zone ? null : draft.area ? ZONE_UNMATCHED_NOTE : null]
     .filter(Boolean)
     .join("; ");
@@ -40,9 +68,9 @@ export async function upsertTutor(opts: {
     subjectGroup: draft.subjectGroup ?? "other",
     curriculum: draft.curriculum ?? "",
     gradesBySubject: draft.gradesBySubject ?? undefined,
-    area: draft.area ?? "",
-    latitude: zone?.latitude ?? null,
-    longitude: zone?.longitude ?? null,
+    area: areaName,
+    latitude,
+    longitude,
     availability: draft.availability ?? [],
     expectedFee: draft.expectedFee ?? null,
     status,
@@ -67,7 +95,7 @@ export async function createParentRequest(opts: {
   internalNote?: string | null;
 }) {
   const { whatsappId, draft, rawMessage, campaignId, status } = opts;
-  const zone = draft.area ? await resolveZone(draft.area) : null;
+  const { zone, areaName, latitude, longitude } = await resolveAreaAndCoords(draft);
   const notes = [
     opts.internalNote,
     draft.budget == null ? "budget not provided — confirm with parent" : null,
@@ -83,7 +111,9 @@ export async function createParentRequest(opts: {
       subjects: draft.subjects ?? [],
       subjectGroup: draft.subjectGroup ?? "other",
       curriculum: draft.curriculum ?? "",
-      area: draft.area ?? "",
+      area: areaName,
+      latitude,
+      longitude,
       budget: draft.budget ?? null,
       deliveryMode: draft.deliveryMode ?? "in_person",
       availability: draft.availability ?? [],

@@ -20,6 +20,7 @@ import { missingTutorFields, type TutorDraft } from "@/lib/intake/helpers";
 import { extensionForMime, buildDocumentStoragePath } from "@/lib/intake/documents";
 import { uploadToSupabaseStorage } from "@/lib/storage/supabase";
 import { CURRICULUM_DECLINE } from "@/lib/messages";
+import { extractCoordsFromText } from "@/lib/geo/googleMapsLink";
 
 function parseGradesBySubject(raw: FormDataEntryValue | null): Record<string, string> | null {
   if (typeof raw !== "string" || !raw.trim()) return null;
@@ -65,6 +66,18 @@ export async function POST(req: Request) {
     availability: availabilityRaw.length > 0 ? availabilityRaw : null,
     expectedFee: form.get("expectedFee") ? Number(form.get("expectedFee")) : null,
   };
+
+  // Never trust client-side extraction for the authoritative value — the
+  // server re-parses the pasted link itself. A non-Maps link or garbled
+  // paste is silently ignored and the dropdown's `area` value is used instead.
+  const locationLink = form.get("locationLink") as string | null;
+  if (locationLink && locationLink.trim()) {
+    const coords = extractCoordsFromText(locationLink);
+    if (coords) {
+      draft.preciseLatitude = coords.latitude;
+      draft.preciseLongitude = coords.longitude;
+    }
+  }
 
   if (draft.curriculum && classifyCurriculum(draft.curriculum) === "decline") {
     await upsertTutor({

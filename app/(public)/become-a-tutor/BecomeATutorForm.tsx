@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AVAILABILITY_TAGS } from "@/lib/messages";
 import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
+import { extractCoordsFromText } from "@/lib/geo/googleMapsLink";
 import { input, label, badge } from "@/app/components/ui";
 
 // Local "sticker" styles, not the shared admin `card`/`btnPrimary`/`btnSecondary`
@@ -27,6 +28,7 @@ export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] })
     qualification: "",
     availability: [] as string[],
     expectedFee: "",
+    locationLink: "",
   });
   const [grades, setGrades] = useState<{ subject: string; grade: string }[]>([{ subject: "", grade: "" }]);
   const [cnic, setCnic] = useState<File | null>(null);
@@ -65,6 +67,7 @@ export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] })
     body.append("gradesBySubject", JSON.stringify(gradesBySubject));
     for (const tag of form.availability) body.append("availability", tag);
     if (form.expectedFee) body.append("expectedFee", form.expectedFee);
+    if (form.locationLink.trim()) body.append("locationLink", form.locationLink);
     if (cnic) body.append("cnic", cnic);
     for (const file of marksheets) body.append("marksheets", file);
 
@@ -106,6 +109,21 @@ export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] })
             </option>
           ))}
         </select>
+      </div>
+      <div className="sm:col-span-2">
+        <label className={label}>Or paste your Google Maps location link (optional)</label>
+        <input
+          className={input}
+          placeholder="https://maps.google.com/?q=24.8938,67.0728"
+          value={form.locationLink}
+          onChange={(e) => setForm({ ...form, locationLink: e.target.value })}
+        />
+        {form.locationLink.trim() &&
+          (extractCoordsFromText(form.locationLink) ? (
+            <p className="mt-1 text-xs font-semibold text-teal-700">📍 Location detected — this will be used instead of the Area dropdown</p>
+          ) : (
+            <p className="mt-1 text-xs text-gray-500">Doesn&apos;t look like a Google Maps link — the Area dropdown above will be used instead</p>
+          ))}
       </div>
       <div>
         <label className={label}>Qualification</label>
