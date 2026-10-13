@@ -56,7 +56,7 @@ export interface MatchCandidate {
   internalNote: string | null;
 }
 
-function haversineKm(
+export function haversineKm(
   lat1: number,
   lon1: number,
   lat2: number,

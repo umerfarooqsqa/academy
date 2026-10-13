@@ -13,20 +13,33 @@ function isSameUtcDay(a: Date, b: Date): boolean {
 }
 
 export async function getOpenOpportunityListings(): Promise<OpportunityListing[]> {
-  const matches = await prisma.match.findMany({
-    where: { publishedToPageAt: { not: null }, interestedTutorId: null },
-    include: { parentRequest: true },
-    orderBy: { publishedToPageAt: "desc" },
-  });
+  const [matches, zones] = await Promise.all([
+    prisma.match.findMany({
+      where: { publishedToPageAt: { not: null }, interestedTutorId: null },
+      include: { parentRequest: true },
+      orderBy: { publishedToPageAt: "desc" },
+    }),
+    // Same AreaZone data the admin manages via /zones and /heatmap — reused
+    // here (2026-10-13 feature) so tutors can see live distance from their
+    // own location on the public /opportunities page.
+    prisma.areaZone.findMany(),
+  ]);
+  const zoneByName = new Map(zones.map((z) => [z.name.toLowerCase(), z]));
+
   return matches
     .filter((m) => m.opportunityCode)
-    .map((m) => ({
-      opportunityCode: m.opportunityCode as string,
-      subjects: m.parentRequest.subjects,
-      subjectGroup: m.parentRequest.subjectGroup,
-      curriculum: m.parentRequest.curriculum,
-      area: m.parentRequest.area,
-    }));
+    .map((m) => {
+      const zone = zoneByName.get(m.parentRequest.area.toLowerCase());
+      return {
+        opportunityCode: m.opportunityCode as string,
+        subjects: m.parentRequest.subjects,
+        subjectGroup: m.parentRequest.subjectGroup,
+        curriculum: m.parentRequest.curriculum,
+        area: m.parentRequest.area,
+        latitude: zone?.latitude,
+        longitude: zone?.longitude,
+      };
+    });
 }
 
 export async function postDailyFacebookDigest(now: Date = new Date()) {

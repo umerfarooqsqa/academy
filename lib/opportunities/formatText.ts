@@ -11,6 +11,12 @@ export interface OpportunityListing {
   subjectGroup: string;
   curriculum: string;
   area: string;
+  // Resolved from AreaZone by area name (2026-10-13 feature: tutors can see
+  // live distance from their own location) — undefined if the area string
+  // doesn't match any configured AreaZone (same "area not in zone table"
+  // edge case handled elsewhere). Unused by the digest text formatters below.
+  latitude?: number;
+  longitude?: number;
 }
 
 function groupLabel(g: string): string {

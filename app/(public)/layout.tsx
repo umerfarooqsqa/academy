@@ -59,13 +59,8 @@ export default async function PublicLayout({ children }: { children: React.React
       <main>{children}</main>
 
       <footer className="border-t-2 border-gray-900/5 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-gray-500 sm:flex-row sm:px-6">
-          <span>
-            © {new Date().getFullYear()} {content.siteName}
-          </span>
-          <Link href="/login" className="hover:text-gray-700">
-            Admin
-          </Link>
+        <div className="mx-auto max-w-6xl px-4 text-center text-sm text-gray-500 sm:px-6">
+          © {new Date().getFullYear()} {content.siteName}
         </div>
       </footer>
     </div>
