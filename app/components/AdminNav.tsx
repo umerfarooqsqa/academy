@@ -1,7 +1,18 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+
+// Shown next to whichever link is currently navigating (Next 15's
+// useLinkStatus — must render inside the Link's children). Clicking a nav
+// link previously gave no feedback until the whole target page's data
+// finished loading (no loading.tsx existed), which read as "the navbar is
+// slow" — this plus app/(admin)/loading.tsx fixes that. Static text, not an
+// animation, per Section 7's "no animations" rule for the admin dashboard.
+function PendingHint() {
+  const { pending } = useLinkStatus();
+  return pending ? <span className="ml-1 opacity-70">…</span> : null;
+}
 
 const LINKS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -47,6 +58,7 @@ export default function AdminNav({ role }: { role: string }) {
                 }`}
               >
                 {link.label}
+                <PendingHint />
               </Link>
             );
           })}
