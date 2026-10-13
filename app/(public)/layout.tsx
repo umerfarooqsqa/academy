@@ -15,6 +15,7 @@ import Link from "next/link";
 import { Baloo_2 } from "next/font/google";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/siteContent";
+import MobileNav from "./MobileNav";
 
 const headingFont = Baloo_2({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-heading" });
 
@@ -32,21 +33,21 @@ export default async function PublicLayout({ children }: { children: React.React
   return (
     <div className={`${headingFont.variable} bg-[#FFFBF5]`}>
       <header className="sticky top-0 z-10 border-b-2 border-gray-900/5 bg-[#FFFBF5]/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+        <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5 font-heading text-lg font-extrabold tracking-tight text-gray-900">
             <span className="flex h-9 w-9 rotate-[-6deg] items-center justify-center rounded-xl bg-rose-500 text-base font-extrabold text-white shadow-[2px_2px_0_0_#1f2937]">
               {content.siteName.charAt(0).toUpperCase()}
             </span>
             {content.siteName}
           </Link>
-          <nav className="flex items-center gap-2 sm:gap-5">
-            <Link href="/find-a-tutor" className="hidden text-sm font-semibold text-gray-700 hover:text-rose-600 sm:inline">
+          <nav className="hidden items-center gap-5 sm:flex">
+            <Link href="/find-a-tutor" className="text-sm font-semibold text-gray-700 hover:text-rose-600">
               Find a tutor
             </Link>
-            <Link href="/become-a-tutor" className="hidden text-sm font-semibold text-gray-700 hover:text-rose-600 sm:inline">
+            <Link href="/become-a-tutor" className="text-sm font-semibold text-gray-700 hover:text-rose-600">
               Become a tutor
             </Link>
-            <Link href="/opportunities" className="hidden text-sm font-semibold text-gray-700 hover:text-rose-600 sm:inline">
+            <Link href="/opportunities" className="text-sm font-semibold text-gray-700 hover:text-rose-600">
               Opportunities
             </Link>
             <Link
@@ -56,6 +57,7 @@ export default async function PublicLayout({ children }: { children: React.React
               Get started
             </Link>
           </nav>
+          <MobileNav />
         </div>
       </header>
 
