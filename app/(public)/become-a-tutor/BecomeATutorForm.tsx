@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { AVAILABILITY_TAGS } from "@/lib/messages";
 import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
-import { card, input, label, btnPrimary, btnSecondary, badge } from "@/app/components/ui";
+import { input, label, badge } from "@/app/components/ui";
+
+// Local "sticker" styles, not the shared admin `card`/`btnPrimary`/`btnSecondary`
+// — this public site intentionally has its own distinct look (2026-10-13 redesign).
+const card = "rounded-3xl border-2 border-gray-900 bg-white p-6 shadow-[5px_5px_0_0_#1f2937] sm:p-8";
+const btnPrimary =
+  "rounded-full border-2 border-gray-900 bg-rose-500 px-6 py-3 text-base font-bold text-white shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-0.5 active:translate-y-0 active:shadow-none disabled:opacity-50";
+const btnSecondary =
+  "rounded-full border-2 border-gray-900 bg-white px-5 py-2.5 text-sm font-bold text-gray-900 shadow-[3px_3px_0_0_#1f2937] transition hover:-translate-y-0.5 active:translate-y-0 active:shadow-none";
 
 export default function BecomeATutorForm({ zoneNames }: { zoneNames: string[] }) {
   const [busy, setBusy] = useState(false);

@@ -1,12 +1,13 @@
-// Public homepage (2026-10-13 feature: a real client-facing website, content
-// managed from /website-content). Nav header + footer come from this route
-// group's layout.tsx. Reachable with no login (middleware keeps "/" public);
-// the admin dashboard is still reachable directly at /dashboard.
+// Public homepage — content managed from /website-content. Nav header +
+// footer come from this route group's layout.tsx. Reachable with no login
+// (middleware keeps "/" public); the admin dashboard is still reachable
+// directly at /dashboard.
 //
-// Visually distinct from the plain admin dashboard on purpose — CLAUDE.md
-// Section 7's "keep it plain" rule is written for the internal operator tool,
-// not this client-facing site, and Section 11 explicitly calls for premium
-// positioning. Inline SVG icons only (no icon library dependency).
+// 2026-10-13 redesign — operator feedback: make it playful and distinct, not
+// a generic corporate SaaS look. Rose/amber/teal palette, hand-tilted
+// "sticker" cards and buttons (solid offset shadows, not soft blurs), varied
+// icon colors instead of one repeated brand color. Inline SVG icons only, no
+// icon library dependency.
 
 import Link from "next/link";
 import { getSiteContent } from "@/lib/siteContent";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 function SearchIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
       <circle cx="11" cy="11" r="7" />
       <path d="m21 21-4.3-4.3" strokeLinecap="round" />
     </svg>
@@ -24,7 +25,7 @@ function SearchIcon() {
 
 function MatchIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
       <circle cx="8" cy="8" r="3.25" />
       <circle cx="16" cy="8" r="3.25" />
       <path d="M3 20c0-3 2.5-5.25 5-5.25S13 17 13 20" strokeLinecap="round" />
@@ -35,7 +36,7 @@ function MatchIcon() {
 
 function CalendarIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
       <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
       <path d="M8 3v4M16 3v4M3.5 10h17" strokeLinecap="round" />
       <path d="m8.5 14.5 2 2 4.5-4.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -43,7 +44,11 @@ function CalendarIcon() {
   );
 }
 
-const STEP_ICONS = [SearchIcon, MatchIcon, CalendarIcon];
+const STEPS = [
+  { Icon: SearchIcon, bg: "bg-rose-400", rotate: "-rotate-3" },
+  { Icon: MatchIcon, bg: "bg-amber-400", rotate: "rotate-2" },
+  { Icon: CalendarIcon, bg: "bg-teal-400", rotate: "-rotate-2" },
+];
 
 export default async function HomePage() {
   const content = await getSiteContent();
@@ -52,31 +57,28 @@ export default async function HomePage() {
     <>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 -top-40 -z-10 flex justify-center blur-3xl"
-        >
-          <div className="h-[32rem] w-[64rem] rounded-full bg-gradient-to-tr from-indigo-200 via-sky-100 to-amber-100 opacity-70" />
-        </div>
+        <div aria-hidden className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-amber-200/60 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -right-20 top-10 h-80 w-80 rounded-full bg-rose-200/60 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute left-1/3 bottom-0 h-64 w-64 rounded-full bg-teal-200/50 blur-3xl" />
 
-        <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 sm:py-28">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-200">
+        <div className="relative mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 sm:py-28">
+          <span className="inline-flex rotate-[-2deg] items-center gap-1.5 rounded-full border-2 border-gray-900 bg-white px-4 py-1.5 text-sm font-bold text-gray-900 shadow-[3px_3px_0_0_#1f2937]">
             {content.heroEyebrow}
           </span>
-          <h1 className="mt-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+          <h1 className="mt-7 font-heading text-4xl font-extrabold tracking-tight text-gray-900 sm:text-6xl">
             {content.heroHeadline}
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-gray-600">{content.heroSubheadline}</p>
+          <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-gray-600">{content.heroSubheadline}</p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link
               href="/find-a-tutor"
-              className="rounded-full bg-indigo-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500 hover:shadow-indigo-300"
+              className="rounded-full border-2 border-gray-900 bg-rose-500 px-7 py-3.5 text-base font-bold text-white shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#1f2937] active:translate-y-0 active:shadow-none"
             >
               Find a tutor
             </Link>
             <Link
               href="/become-a-tutor"
-              className="rounded-full border border-gray-300 bg-white px-7 py-3.5 text-sm font-semibold text-gray-800 shadow-sm transition hover:border-gray-400 hover:bg-gray-50"
+              className="rounded-full border-2 border-gray-900 bg-white px-7 py-3.5 text-base font-bold text-gray-900 shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#1f2937] active:translate-y-0 active:shadow-none"
             >
               Become a tutor
             </Link>
@@ -87,22 +89,18 @@ export default async function HomePage() {
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         <div className="text-center">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-indigo-600">How it works</h2>
-          <p className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">Three steps to the right match</p>
+          <h2 className="font-heading text-sm font-extrabold uppercase tracking-wider text-rose-500">How it works</h2>
+          <p className="mt-2 font-heading text-3xl font-extrabold text-gray-900 sm:text-4xl">Three easy steps</p>
         </div>
-        <div className="relative mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute top-7 left-0 right-0 hidden h-px bg-gradient-to-r from-transparent via-indigo-200 to-transparent sm:block"
-          />
+        <div className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3">
           {content.howItWorks.map((step, i) => {
-            const Icon = STEP_ICONS[i % STEP_ICONS.length];
+            const { Icon, bg, rotate } = STEPS[i % STEPS.length];
             return (
-              <div key={i} className="relative text-center">
-                <div className="relative mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
+              <div key={i} className={`rounded-3xl border-2 border-gray-900 bg-white p-6 text-center shadow-[5px_5px_0_0_#1f2937] ${rotate}`}>
+                <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-gray-900 ${bg} text-white`}>
                   <Icon />
                 </div>
-                <div className="mt-5 text-xs font-bold tracking-wider text-indigo-500">STEP {i + 1}</div>
+                <div className="mt-4 font-heading text-xs font-extrabold tracking-wider text-gray-400">STEP {i + 1}</div>
                 <p className="mt-2 text-base text-gray-700">{step}</p>
               </div>
             );
@@ -111,25 +109,25 @@ export default async function HomePage() {
       </section>
 
       {/* Parent / tutor pitch */}
-      <section className="bg-gray-50 py-16 sm:py-24">
+      <section className="py-16 sm:py-24">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 sm:grid-cols-2 sm:px-6">
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+          <div className="rotate-1 rounded-3xl border-2 border-gray-900 bg-amber-100 p-8 shadow-[5px_5px_0_0_#1f2937]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-gray-900 bg-white text-amber-600">
               <SearchIcon />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-gray-900">For parents</h2>
-            <p className="mt-3 text-base leading-relaxed text-gray-600">{content.parentPitch}</p>
-            <Link href="/find-a-tutor" className="mt-5 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+            <h2 className="mt-5 font-heading text-2xl font-extrabold text-gray-900">For parents</h2>
+            <p className="mt-3 text-base leading-relaxed text-gray-700">{content.parentPitch}</p>
+            <Link href="/find-a-tutor" className="mt-5 inline-block text-sm font-bold text-gray-900 underline decoration-amber-500 decoration-4 underline-offset-4 hover:text-rose-600">
               Find a tutor →
             </Link>
           </div>
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
+          <div className="-rotate-1 rounded-3xl border-2 border-gray-900 bg-teal-100 p-8 shadow-[5px_5px_0_0_#1f2937]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-gray-900 bg-white text-teal-600">
               <MatchIcon />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-gray-900">For tutors</h2>
-            <p className="mt-3 text-base leading-relaxed text-gray-600">{content.tutorPitch}</p>
-            <Link href="/become-a-tutor" className="mt-5 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+            <h2 className="mt-5 font-heading text-2xl font-extrabold text-gray-900">For tutors</h2>
+            <p className="mt-3 text-base leading-relaxed text-gray-700">{content.tutorPitch}</p>
+            <Link href="/become-a-tutor" className="mt-5 inline-block text-sm font-bold text-gray-900 underline decoration-teal-500 decoration-4 underline-offset-4 hover:text-rose-600">
               Become a tutor →
             </Link>
           </div>
@@ -139,17 +137,19 @@ export default async function HomePage() {
       {/* Testimonials */}
       {content.testimonials.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <h2 className="text-center text-2xl font-bold text-gray-900 sm:text-3xl">What people say</h2>
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <h2 className="text-center font-heading text-3xl font-extrabold text-gray-900 sm:text-4xl">What people say</h2>
+          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2">
             {content.testimonials.map((t, i) => (
-              <blockquote key={i} className="rounded-2xl border border-gray-200 bg-white p-7 shadow-sm">
-                <span className="text-4xl font-serif leading-none text-indigo-200">&ldquo;</span>
-                <p className="-mt-3 text-base italic leading-relaxed text-gray-700">{t.quote}</p>
+              <blockquote
+                key={i}
+                className={`rounded-3xl border-2 border-gray-900 bg-white p-7 shadow-[5px_5px_0_0_#1f2937] ${i % 2 === 0 ? "rotate-1" : "-rotate-1"}`}
+              >
+                <p className="text-base leading-relaxed text-gray-700">&ldquo;{t.quote}&rdquo;</p>
                 <footer className="mt-4 flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-gray-900 bg-rose-400 text-sm font-extrabold text-white">
                     {t.name.charAt(0).toUpperCase()}
                   </span>
-                  <span className="text-sm font-semibold text-gray-700">{t.name}</span>
+                  <span className="font-heading text-sm font-bold text-gray-800">{t.name}</span>
                 </footer>
               </blockquote>
             ))}
@@ -159,21 +159,21 @@ export default async function HomePage() {
 
       {/* Closing CTA */}
       <section className="mx-auto max-w-4xl px-4 pb-20 sm:px-6">
-        <div className="rounded-3xl bg-indigo-600 px-8 py-14 text-center shadow-xl shadow-indigo-200">
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">Ready to get started?</h2>
-          <p className="mx-auto mt-3 max-w-xl text-indigo-100">
+        <div className="rounded-[2.5rem] border-2 border-gray-900 bg-rose-500 px-8 py-14 text-center shadow-[6px_6px_0_0_#1f2937]">
+          <h2 className="font-heading text-3xl font-extrabold text-white sm:text-4xl">Ready to get started?</h2>
+          <p className="mx-auto mt-3 max-w-xl text-rose-50">
             Whether you&apos;re looking for a tutor or ready to teach, it takes less than two minutes.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
               href="/find-a-tutor"
-              className="rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50"
+              className="rounded-full border-2 border-gray-900 bg-amber-300 px-7 py-3.5 text-base font-bold text-gray-900 shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#1f2937] active:translate-y-0 active:shadow-none"
             >
               Find a tutor
             </Link>
             <Link
               href="/become-a-tutor"
-              className="rounded-full border border-indigo-400 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+              className="rounded-full border-2 border-gray-900 bg-white px-7 py-3.5 text-base font-bold text-gray-900 shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#1f2937] active:translate-y-0 active:shadow-none"
             >
               Become a tutor
             </Link>

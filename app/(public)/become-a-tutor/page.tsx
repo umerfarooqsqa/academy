@@ -14,7 +14,7 @@ export default async function BecomeATutorPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Become a tutor</h1>
+        <h1 className="font-heading text-4xl font-extrabold tracking-tight text-gray-900">Become a tutor</h1>
         <p className="mx-auto mt-3 max-w-md text-base text-gray-600">
           Get matched with students close to you — save on travel time and fuel cost.
         </p>

@@ -20,24 +20,26 @@ export interface SiteContent {
   testimonials: { name: string; quote: string }[];
 }
 
-// Copy drawn directly from CLAUDE.md Section 11's brand positioning — premium
-// positioning, hyperlocal guarantee, speed, curation; never cheapest-price
-// framing. Used until the operator edits it from /website-content.
+// Copy keeps the real substance of CLAUDE.md Section 11's brand positioning
+// (hyperlocal guarantee, speed, curation, premium-not-cheapest) but phrased
+// warmer and more conversational — 2026-10-13, operator feedback: the first
+// pass read "too formal," wanted something playful and distinct. Used until
+// the operator edits it from /website-content.
 export const DEFAULT_SITE_CONTENT: SiteContent = {
-  siteName: "Academy",
-  heroEyebrow: "Premium, vetted tutors — matched to your own area",
-  heroHeadline: "Matched with the right tutor — from your own area, guaranteed.",
+  siteName: "Lili Tutor Academy",
+  heroEyebrow: "Tutors from your own neighborhood 👋",
+  heroHeadline: "The right tutor is closer than you think.",
   heroSubheadline:
-    "Vetted, grade-verified tutors for O/A-levels, FSc/Intermediate, Computer Science, Skills, and university-level subjects — matched within hours, not days.",
+    "We match you with vetted, grade-verified tutors for O/A-levels, FSc, Computer Science, Skills, and university subjects — right from your own area, usually within hours.",
   howItWorks: [
-    "Tell us what you're looking for — subject, level, and your area.",
-    "We match you with a short list of vetted tutors from your own area, never a distant commute.",
-    "Pick a tutor, schedule a demo, and get started.",
+    "Tell us what you need — subject, level, your area. Takes two minutes.",
+    "We hand-pick a short list of great tutors from your own neighborhood.",
+    "Pick your favorite, lock in a demo, and you're off.",
   ],
   parentPitch:
-    "A short list of vetted options, not an overwhelming directory — matched only with a tutor from your own area, and specifically strong in the subjects you need.",
+    "No endless scrolling through directories. Just a short, curated list of tutors from your own area who are genuinely strong in what your child needs.",
   tutorPitch:
-    "Get matched with students close to you — save on travel time and fuel cost, and teach the subjects you're strongest in.",
+    "Teach students near you, not across town. Less commuting, more teaching — matched to the subjects you're actually great at.",
   testimonials: [],
 };
 
