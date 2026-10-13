@@ -5,6 +5,14 @@
   // plan notes near lib/db.ts and worker.ts for why each piece is here.
   "name": "tutor-parent-matching",
   "main": "worker.ts",
+  // Not a secret — just an identifier (from `wrangler whoami`). Added because
+  // the scoped CI API token lacks account-listing permission, so Wrangler's
+  // auto-detection fails ("Failed to automatically retrieve account IDs").
+  // Verified live: the CLOUDFLARE_ACCOUNT_ID env var alone did NOT fix this
+  // for `opennextjs-cloudflare deploy`'s internal account-resolution call —
+  // it has to be here in the config file itself, exactly as Wrangler's own
+  // error message suggests as the alternative.
+  "account_id": "f0a99462abbc2d4caa90b7c2d936ee93",
   "compatibility_date": "2026-10-12",
   // nodejs_compat: required for Prisma's driver adapter (@prisma/adapter-pg)
   // and the existing node:crypto scrypt usage in lib/auth/passwords.ts.
