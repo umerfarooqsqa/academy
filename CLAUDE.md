@@ -533,9 +533,12 @@ For each AreaZone:
 - `/finance` — the cost-per-successful-deal calculator (6.9): date range + area filters, showing cost per deal, profit per deal, net profit, break-even deal count, and a simple log/entry form for `MarketingSpend` rows (so ad spend and referral payouts get recorded as they happen, not reconstructed later)
 - `/campaigns` — create/edit `Campaign` rows (for `meta_ads` channel, this is where you paste in the Meta ad ID once the ad is live, so inbound leads auto-attribute silently), manually tag `campaignId` on any lead that came in through a non-Meta-ad channel, and the A/B comparison table from 6.10 — the primary page for deciding which audience/creative is actually worth continued spend
 - `/logs` — browse ApprovalLog entries (for reviewing correction patterns over time)
+- `/website-content` — **new, 2026-10-13 deviation (see below)**: edits the public homepage's copy (headline, pitch text, how-it-works steps, testimonials). Staff-accessible, not admin-only.
 - Parent-requests-needing-a-call should surface prominently on `/dashboard` and `/parents` (see 6.1) so the operator can work through them in the Fri/Sat/Sun or evening call slots
 
 Keep every page functional and plain — Tailwind utility styling only, no heavy component library, no animations. This is an internal operator tool, not a customer-facing product.
+
+**Deviation, 2026-10-13 — a real public client website, not just `/opportunities`.** Operator request: a marketing site for both parents and tutors, with forms feeding directly into the existing intake pipeline, content editable from the admin dashboard. Public pages (root layout, no admin nav, same pattern as `/opportunities`): `/` (homepage, replaces the old `redirect("/dashboard")`), `/find-a-tutor` (parent request form), `/become-a-tutor` (tutor registration form, with optional CNIC/marksheet upload). No LLM call involved — a structured web form already gives clean fields, unlike a free-text WhatsApp message, so submissions go straight through `lib/intake/persist.ts`'s existing `createParentRequest`/`upsertTutor` + the same curriculum decline check (6.1 step 7) + `runMatchingForParent`, with the same CNIC-gated tutor activation rule as chat-import (6.1 step 10). Content is stored in the existing `SystemState` singleton table (one key, `"site_content"`, one JSON blob) rather than a new Prisma model — see `lib/siteContent.ts`. New public API routes: `POST /api/public/parent-request`, `POST /api/public/tutor-apply` (both added to `middleware.ts`'s public paths alongside `/`, `/find-a-tutor`, `/become-a-tutor`).
 
 ## 8. API routes (Next.js App Router `app/api/...`)
 
@@ -554,6 +557,8 @@ Keep every page functional and plain — Tailwind utility styling only, no heavy
 - `GET/POST /api/tutors`, `/api/parents`, `/api/matches`, `/api/zones` — CRUD backing the dashboard pages
 - `GET/POST /api/subscriptions` — admin-only CRUD for `TutorSubscription` rows, driven by the `/tutors` dashboard form after the operator manually receives payment (6.5) — no tutor-facing write path, no payment gateway
 - `POST /api/matches/check-notification-delay` — periodic route (called on a simple schedule, no queue service) that checks unclaimed opportunities past their free-tier delay window and triggers the free-tutor notification per 6.5 step 3
+- `POST /api/public/parent-request`, `POST /api/public/tutor-apply` — **new, 2026-10-13 deviation (see Section 7)**: public, unauthenticated. Back the `/find-a-tutor` and `/become-a-tutor` web forms — same pipeline as every other intake path, no LLM call needed since the form already gives structured fields
+- `GET/POST /api/website-content` — authenticated (staff), backs `/website-content`'s CMS editor
 
 ## 9. Environment variables
 

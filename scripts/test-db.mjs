@@ -19,6 +19,13 @@ const pg = new EmbeddedPostgres({
   password: "postgres",
   port: 55432,
   persistent: true,
+  // Without these, `initdb` defaults to the OS locale/codepage — on Windows
+  // that's commonly WIN1252, not UTF8. Real Postgres (Supabase) is UTF8;
+  // without this, any non-ASCII content (em dashes, curly quotes, names with
+  // diacritics) saved locally throws "has no equivalent in encoding WIN1252"
+  // even though the same save works fine against production. Found live
+  // while testing the website-content CMS feature (2026-10-13).
+  initdbFlags: ["--encoding=UTF8", "--locale=C"],
 });
 
 const cmd = process.argv[2] ?? "start";

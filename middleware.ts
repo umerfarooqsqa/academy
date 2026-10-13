@@ -3,9 +3,10 @@
 // Public, unauthenticated routes: /login, /opportunities (Section 7 — "public,
 // not behind admin auth"), the public opportunities API, the two inbound
 // webhooks (Meta and JazzCash need to reach us without a browser session),
-// and the three Vercel Cron-triggered routes (vercel.json) — Cron requests
-// carry no session cookie either; each has its own CRON_SECRET bearer check
-// (lib/cron/guard.ts) once that env var is configured.
+// the three Vercel Cron-triggered routes (vercel.json) — Cron requests carry
+// no session cookie either; each has its own CRON_SECRET bearer check
+// (lib/cron/guard.ts) once that env var is configured — and (2026-10-13) the
+// public client website (/, /find-a-tutor, /become-a-tutor, /api/public/*).
 //
 // Beyond plain authentication, a second check gates admin-only paths — the
 // "money" pages (Payments, Finance, Campaigns, Marketing) plus user management
@@ -17,8 +18,12 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 const PUBLIC_PATHS = [
   "/login",
   "/opportunities",
+  "/",
+  "/find-a-tutor",
+  "/become-a-tutor",
   "/api/auth/login",
   "/api/opportunities",
+  "/api/public",
   "/api/whatsapp/webhook",
   "/api/payments/webhook",
   "/api/matches/check-notification-delay",

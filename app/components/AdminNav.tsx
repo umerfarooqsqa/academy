@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/parents", label: "Parents" },
   { href: "/zones", label: "Zones" },
   { href: "/heatmap", label: "Heat map" },
+  { href: "/website-content", label: "Website content" },
   { href: "/payments", label: "Payments", adminOnly: true },
   { href: "/finance", label: "Finance", adminOnly: true },
   { href: "/campaigns", label: "Campaigns", adminOnly: true },

@@ -3,9 +3,17 @@
 // ParentRequest data from the dashboard once live (CLAUDE.md Section 7);
 // everything here is clearly fictional example data.
 
+// 2026-10-12 deviation (CLAUDE.md Section 4, Cloudflare Workers deploy
+// target): the generator's engineType="client" requires a driver adapter in
+// every environment, including this standalone script — see lib/db.ts's
+// comment for the full story. Always runs against DATABASE_URL directly
+// (never Hyperdrive) since this is a local/CI-only maintenance script, never
+// deployed.
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 const ZONES: Array<{ name: string; latitude: number; longitude: number; maxKm?: number }> = [
   { name: "North Nazimabad", latitude: 24.9425, longitude: 67.0384 },
