@@ -10,8 +10,10 @@ import { prisma } from "@/lib/db";
 const STATE_KEY = "site_content";
 
 export interface SiteContent {
+  siteName: string;
   heroHeadline: string;
   heroSubheadline: string;
+  heroEyebrow: string;
   howItWorks: string[];
   parentPitch: string;
   tutorPitch: string;
@@ -22,6 +24,8 @@ export interface SiteContent {
 // positioning, hyperlocal guarantee, speed, curation; never cheapest-price
 // framing. Used until the operator edits it from /website-content.
 export const DEFAULT_SITE_CONTENT: SiteContent = {
+  siteName: "Academy",
+  heroEyebrow: "Premium, vetted tutors — matched to your own area",
   heroHeadline: "Matched with the right tutor — from your own area, guaranteed.",
   heroSubheadline:
     "Vetted, grade-verified tutors for O/A-levels, FSc/Intermediate, Computer Science, Skills, and university-level subjects — matched within hours, not days.",

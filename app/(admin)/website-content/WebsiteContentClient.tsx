@@ -52,6 +52,14 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
   return (
     <div className={`${card} mt-4 flex flex-col gap-4`}>
       <div>
+        <label className={label}>Site name (shown in the nav and footer)</label>
+        <input className={input} value={content.siteName} onChange={(e) => setContent({ ...content, siteName: e.target.value })} />
+      </div>
+      <div>
+        <label className={label}>Eyebrow badge (small text above the headline)</label>
+        <input className={input} value={content.heroEyebrow} onChange={(e) => setContent({ ...content, heroEyebrow: e.target.value })} />
+      </div>
+      <div>
         <label className={label}>Hero headline</label>
         <input
           className={input}
