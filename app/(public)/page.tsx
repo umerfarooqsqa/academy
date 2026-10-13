@@ -11,6 +11,7 @@
 
 import Link from "next/link";
 import { getSiteContent } from "@/lib/siteContent";
+import NearbyOpportunitiesWidget from "./NearbyOpportunitiesWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,11 @@ export default async function HomePage() {
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* Nearby opportunities for tutors */}
+      <section className="mx-auto max-w-2xl px-4 pb-16 sm:px-6 sm:pb-24">
+        <NearbyOpportunitiesWidget />
       </section>
 
       {/* Testimonials */}

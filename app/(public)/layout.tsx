@@ -46,6 +46,9 @@ export default async function PublicLayout({ children }: { children: React.React
             <Link href="/become-a-tutor" className="hidden text-sm font-semibold text-gray-700 hover:text-rose-600 sm:inline">
               Become a tutor
             </Link>
+            <Link href="/opportunities" className="hidden text-sm font-semibold text-gray-700 hover:text-rose-600 sm:inline">
+              Opportunities
+            </Link>
             <Link
               href="/find-a-tutor"
               className="rounded-full border-2 border-gray-900 bg-amber-300 px-4 py-2 text-sm font-bold text-gray-900 shadow-[3px_3px_0_0_#1f2937] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_0_#1f2937] active:translate-y-0 active:shadow-none"
