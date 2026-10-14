@@ -1,7 +1,10 @@
 "use client";
 
-// Homepage "What's near you?" (2026-10-14 — replaces NearbyOpportunitiesWidget).
-// One opt-in location tap fills two cards:
+// Homepage "For parents / For tutors" + "What's near you?" (2026-10-14 —
+// replaces NearbyOpportunitiesWidget, and merged with the separate parent /
+// tutor pitch cards so the homepage has one pair of cards, not two). Each
+// card shows its /website-content pitch text; one opt-in location tap then
+// fills both cards:
 //   - parents: how many VERIFIED tutors are near (lib/tutors/verified.ts —
 //     active + CNIC checked by an admin), from per-zone counts only
 //   - tutors: how many open tuitions are near (lib/opportunities/nearby.ts)
@@ -25,7 +28,21 @@ function plural(n: number, one: string, many: string) {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-export default function NearYouSection({ listings, tutorCounts }: { listings: OpportunityListing[]; tutorCounts: ZoneTutorCount[] }) {
+export default function NearYouSection({
+  listings,
+  tutorCounts,
+  parentPitch,
+  tutorPitch,
+  parentIcon,
+  tutorIcon,
+}: {
+  listings: OpportunityListing[];
+  tutorCounts: ZoneTutorCount[];
+  parentPitch: string;
+  tutorPitch: string;
+  parentIcon: React.ReactNode;
+  tutorIcon: React.ReactNode;
+}) {
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,10 +88,12 @@ export default function NearYouSection({ listings, tutorCounts }: { listings: Op
     : [];
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
+    <section className="mx-auto max-w-6xl px-4 pb-16 pt-4 sm:px-6 sm:pb-24 sm:pt-8">
       <div className="text-center">
         <h2 className="font-heading text-3xl font-extrabold text-gray-900 sm:text-4xl">What&apos;s near you?</h2>
-        <p className="mx-auto mt-2 max-w-md text-base text-gray-600">One tap — your location stays on your phone.</p>
+        <p className="mx-auto mt-2 max-w-md text-base text-gray-600">
+          One tap shows the verified tutors and open tuitions in your area — your location stays on your phone.
+        </p>
         {!location && (
           <button type="button" className={`${primaryClass} mt-5`} onClick={checkMyArea} disabled={locating}>
             {locating ? "Finding you…" : "📍 Check my area"}
@@ -86,8 +105,16 @@ export default function NearYouSection({ listings, tutorCounts }: { listings: Op
       <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
         {/* Parents */}
         <div className={`${cardClass} rotate-[-0.5deg] bg-amber-100`}>
-          <p className="font-heading text-xs font-extrabold uppercase tracking-wider text-amber-700">For parents</p>
-          <h3 className="mt-1 font-heading text-2xl font-extrabold text-gray-900">Verified tutors near you</h3>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-gray-900 bg-white text-amber-600">
+              {parentIcon}
+            </div>
+            <div>
+              <p className="font-heading text-xs font-extrabold uppercase tracking-wider text-amber-700">For parents</p>
+              <h3 className="font-heading text-2xl font-extrabold leading-tight text-gray-900">Verified tutors near you</h3>
+            </div>
+          </div>
+          <p className="mt-4 text-base leading-relaxed text-gray-700">{parentPitch}</p>
           {tutorsNear ? (
             tutorsNear.total > 0 ? (
               <>
@@ -112,9 +139,8 @@ export default function NearYouSection({ listings, tutorCounts }: { listings: Op
               </p>
             )
           ) : (
-            <p className="mt-4 text-base text-gray-700">
-              {totalVerified > 0 && <strong>{plural(totalVerified, "verified tutor", "verified tutors")} and growing. </strong>}
-              Every tutor is ID-checked by our team, and we only match you with tutors from your own area.
+            <p className="mt-3 text-sm font-semibold text-gray-800">
+              {totalVerified > 0 ? `✓ ${plural(totalVerified, "verified tutor", "verified tutors")} and growing — every one ID-checked by our team.` : "✓ Every tutor is ID-checked by our team."}
             </p>
           )}
           <Link href="/find-a-tutor" className={`${ctaClass} mt-auto`}>
@@ -124,8 +150,16 @@ export default function NearYouSection({ listings, tutorCounts }: { listings: Op
 
         {/* Tutors */}
         <div className={`${cardClass} rotate-[0.5deg] bg-teal-100`}>
-          <p className="font-heading text-xs font-extrabold uppercase tracking-wider text-teal-700">For tutors</p>
-          <h3 className="mt-1 font-heading text-2xl font-extrabold text-gray-900">Tuitions near you</h3>
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-gray-900 bg-white text-teal-600">
+              {tutorIcon}
+            </div>
+            <div>
+              <p className="font-heading text-xs font-extrabold uppercase tracking-wider text-teal-700">For tutors</p>
+              <h3 className="font-heading text-2xl font-extrabold leading-tight text-gray-900">Tuitions near you</h3>
+            </div>
+          </div>
+          <p className="mt-4 text-base leading-relaxed text-gray-700">{tutorPitch}</p>
           {location ? (
             tuitionsNear.length > 0 ? (
               <>
@@ -149,10 +183,11 @@ export default function NearYouSection({ listings, tutorCounts }: { listings: Op
               </p>
             )
           ) : (
-            <p className="mt-4 text-base text-gray-700">
-              {listings.length > 0 ? `${plural(listings.length, "student is", "students are")} looking for a tutor right now. ` : ""}
-              Get matched with students close to you — save on travel time and fuel.
-            </p>
+            listings.length > 0 && (
+              <p className="mt-3 text-sm font-semibold text-gray-800">
+                📚 {plural(listings.length, "student is", "students are")} looking for a tutor right now.
+              </p>
+            )
           )}
           <Link href={location && tuitionsNear.length === 0 ? "/become-a-tutor" : "/opportunities"} className={`${ctaClass} mt-auto`}>
             {location && tuitionsNear.length === 0 ? "Become a tutor →" : "See tuitions →"}

@@ -128,34 +128,16 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Parent / tutor pitch */}
-      <section className="py-16 sm:py-24">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 sm:grid-cols-2 sm:px-6">
-          <div className="rotate-1 rounded-3xl border-2 border-gray-900 bg-amber-100 p-8 shadow-[5px_5px_0_0_#1f2937]">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-gray-900 bg-white text-amber-600">
-              <SearchIcon />
-            </div>
-            <h2 className="mt-5 font-heading text-2xl font-extrabold text-gray-900">For parents</h2>
-            <p className="mt-3 text-base leading-relaxed text-gray-700">{content.parentPitch}</p>
-            <Link href="/find-a-tutor" className="mt-5 inline-block text-sm font-bold text-gray-900 underline decoration-amber-500 decoration-4 underline-offset-4 hover:text-rose-600">
-              Find a tutor →
-            </Link>
-          </div>
-          <div className="-rotate-1 rounded-3xl border-2 border-gray-900 bg-teal-100 p-8 shadow-[5px_5px_0_0_#1f2937]">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-gray-900 bg-white text-teal-600">
-              <MatchIcon />
-            </div>
-            <h2 className="mt-5 font-heading text-2xl font-extrabold text-gray-900">For tutors</h2>
-            <p className="mt-3 text-base leading-relaxed text-gray-700">{content.tutorPitch}</p>
-            <Link href="/become-a-tutor" className="mt-5 inline-block text-sm font-bold text-gray-900 underline decoration-teal-500 decoration-4 underline-offset-4 hover:text-rose-600">
-              Become a tutor →
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* What's near you — verified tutors for parents, tuitions for tutors */}
-      <NearYouSection listings={listings} tutorCounts={tutorCounts} />
+      {/* For parents / for tutors — the pitch (editable in /website-content)
+          plus what's near you: verified tutors for parents, tuitions for tutors */}
+      <NearYouSection
+        listings={listings}
+        tutorCounts={tutorCounts}
+        parentPitch={content.parentPitch}
+        tutorPitch={content.tutorPitch}
+        parentIcon={<SearchIcon />}
+        tutorIcon={<MatchIcon />}
+      />
 
       {/* Testimonials */}
       {content.testimonials.length > 0 && (
