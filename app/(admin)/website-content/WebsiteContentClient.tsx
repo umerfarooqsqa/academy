@@ -68,7 +68,7 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
         />
       </div>
       <div>
-        <label className={label}>Hero subheadline</label>
+        <label className={label}>Site description (shown in Google results and link previews — no longer on the homepage)</label>
         <textarea
           className={`${input} min-h-20`}
           value={content.heroSubheadline}

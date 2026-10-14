@@ -14,7 +14,7 @@ async function loadOverview() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-  const [pendingApprovals, activeTutors, openParentRequests, callsNeeded, payments] = await Promise.all([
+  const [pendingApprovals, activeTutors, openParentRequests, callsNeeded, payments, tutorsInterested] = await Promise.all([
     prisma.match.count({ where: { status: "awaiting_approval" } }),
     prisma.tutor.count({ where: { status: "active" } }),
     prisma.parentRequest.count({ where: { status: "pending" } }),
@@ -33,6 +33,10 @@ async function loadOverview() {
         match: { select: { parentRequest: { select: { area: true } } } },
       },
     }),
+    // Approved matches a tutor said "I'm interested" in (premium WhatsApp YES,
+    // or the /opportunities button, 2026-10-14) — waiting on the operator to
+    // send them to the parent.
+    prisma.match.count({ where: { status: "approved", interestedTutorId: { not: null } } }),
   ]);
 
   const paymentRows = payments.map((p) => ({
@@ -43,7 +47,7 @@ async function loadOverview() {
   }));
   const metrics = calculateFinanceMetrics([], paymentRows, { start: monthStart, end: monthEnd });
 
-  return { pendingApprovals, activeTutors, openParentRequests, callsNeeded, metrics };
+  return { pendingApprovals, activeTutors, openParentRequests, callsNeeded, metrics, tutorsInterested };
 }
 
 function StatTile({ label, value, href }: { label: string; value: string | number; href?: string }) {
@@ -57,18 +61,19 @@ function StatTile({ label, value, href }: { label: string; value: string | numbe
 }
 
 export default async function DashboardPage() {
-  const { pendingApprovals, activeTutors, openParentRequests, callsNeeded, metrics } = await loadOverview();
+  const { pendingApprovals, activeTutors, openParentRequests, callsNeeded, metrics, tutorsInterested } = await loadOverview();
 
   return (
     <main>
       <h1 className={pageTitle}>Dashboard</h1>
       <p className="mt-1 text-sm text-gray-500">Overview of this month's pipeline.</p>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <StatTile label="Pending approvals" value={pendingApprovals} href="/matches?status=awaiting_approval" />
         <StatTile label="Active tutors" value={activeTutors} href="/tutors?status=active" />
         <StatTile label="Open parent requests" value={openParentRequests} href="/parents?status=pending" />
         <StatTile label="Calls needed" value={callsNeeded.length} />
+        <StatTile label="Tutors interested" value={tutorsInterested} href="/matches?status=approved" />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">

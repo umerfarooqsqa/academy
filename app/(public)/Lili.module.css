@@ -52,6 +52,17 @@
   left: 47.8%;
 }
 
+/* While Lili is "speaking" (LiliForm.tsx types out her line), her head
+   bobs quickly instead of the slow idle tilt. */
+.talking .head {
+  animation: talk 0.32s ease-in-out infinite alternate;
+}
+
+@keyframes talk {
+  from { transform: rotate(-2.5deg) translateY(0); }
+  to { transform: rotate(2.5deg) translateY(-1.5%); }
+}
+
 /* Little hop when the logo is hovered. */
 :global(.group):hover .hop {
   animation: hop 0.5s ease-out;
@@ -91,6 +102,7 @@
   .tail,
   .head,
   .lid,
+  .talking .head,
   :global(.group):hover .hop {
     animation: none;
   }

@@ -1,8 +1,13 @@
-// Lili chat questions for /find-a-tutor, in order (wording approved by the
+// Lili form questions for /find-a-tutor, in order (wording approved by the
 // operator 2026-10-14), and the JSON body POST /api/public/parent-request
 // expects — the same shape the old form sent, plus latitude/longitude.
+//
+// makeParentSteps takes the per-zone verified-tutor counts so that, right
+// after the location answer, Lili can say "Good news — 8 verified
+// Pre-Medical tutors near Gulshan-e-Iqbal!" (only when the count is > 0).
 
-import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS } from "@/lib/subjectGroups";
+import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
+import { verifiedNear, type ZoneTutorCount } from "@/lib/tutors/nearbyCounts";
 import {
   AVAILABILITY_OPTIONS,
   parseAmount,
@@ -12,30 +17,50 @@ import {
   type Answers,
   type LocationAnswer,
   type StepDef,
-} from "../liliChatFlow";
+} from "../liliFormFlow";
 
-export const PARENT_STEPS: StepDef[] = [
+/** "Good news — N verified … tutors near X! " for the parent's chosen
+ * location and category, or "" when there are none (or no zone to count from). */
+export function verifiedTutorsLine(answers: Answers, counts: ZoneTutorCount[]): string {
+  const loc = answers.location as LocationAnswer | undefined;
+  if (!loc) return "";
+  const zone = counts.find((z) => z.name.toLowerCase() === loc.area.toLowerCase());
+  const lat = loc.latitude ?? zone?.latitude;
+  const lon = loc.longitude ?? zone?.longitude;
+  if (lat == null || lon == null) return "";
+  const group = typeof answers.subjectGroup === "string" ? answers.subjectGroup : undefined;
+  const { total } = verifiedNear(counts, lat, lon, group);
+  if (total === 0) return "";
+  const label = group && group !== "other" ? `${SUBJECT_GROUP_LABELS[group as SubjectGroup] ?? group} ` : "";
+  return `Good news — ${total} verified ${label}tutor${total === 1 ? "" : "s"} near ${zone ? zone.name : loc.area}! `;
+}
+
+export const makeParentSteps = (counts: ZoneTutorCount[] = []): StepDef[] => [
   {
     kind: "text",
     id: "subjects",
+    label: "Subjects",
     prompt: "Hi! I'm Lili 🦊 Which subject(s) do you need help with?",
     placeholder: "e.g. Chemistry, Biology",
   },
   {
     kind: "chips",
     id: "subjectGroup",
+    label: "Category",
     prompt: "Which category fits best?",
     options: SUBJECT_GROUPS.map((g) => ({ value: g, label: SUBJECT_GROUP_LABELS[g] })),
   },
   {
     kind: "text",
     id: "curriculum",
+    label: "Curriculum / level",
     prompt: "Which curriculum or level? e.g. O/A-levels, FSc, BS CS",
     placeholder: "e.g. Cambridge A-levels",
   },
   {
     kind: "chips",
     id: "deliveryMode",
+    label: "Tuition type",
     prompt: "Home tuition, online, or either?",
     options: [
       { value: "in_person", label: "Home tuition" },
@@ -46,18 +71,21 @@ export const PARENT_STEPS: StepDef[] = [
   {
     kind: "location",
     id: "location",
+    label: "Area",
     prompt: "Where should the tutor come to? Tap below and I'll find your area.",
   },
   {
     kind: "multiChips",
     id: "availability",
-    prompt: "When suits the student?",
+    label: "Preferred times",
+    prompt: (a) => `${verifiedTutorsLine(a, counts)}When suits the student?`,
     options: AVAILABILITY_OPTIONS,
     optional: true,
   },
   {
     kind: "text",
     id: "budget",
+    label: "Monthly budget (PKR)",
     prompt: "Monthly budget in PKR? (optional)",
     placeholder: "e.g. 15000",
     inputMode: "numeric",
@@ -67,6 +95,7 @@ export const PARENT_STEPS: StepDef[] = [
   {
     kind: "text",
     id: "studentInfo",
+    label: "About the student",
     prompt: "Anything about the student we should know? (optional)",
     placeholder: "e.g. Grade 11, needs help before mocks",
     multiline: true,
@@ -75,6 +104,7 @@ export const PARENT_STEPS: StepDef[] = [
   {
     kind: "text",
     id: "whatsappId",
+    label: "WhatsApp number",
     prompt: "Last thing: your WhatsApp number, so we can send your matches.",
     placeholder: "0300 1234567",
     inputMode: "tel",

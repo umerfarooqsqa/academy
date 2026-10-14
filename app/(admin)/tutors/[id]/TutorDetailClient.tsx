@@ -18,6 +18,7 @@ interface TutorDetailProps {
     curriculum: string;
     gradesBySubject: unknown;
     cnicImageUrl: string | null;
+    cnicVerifiedAt: Date | null;
     marksheetImageUrls: string[];
     area: string;
     availability: string[];
@@ -119,6 +120,17 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
+    });
+    setBusy(false);
+    router.refresh();
+  }
+
+  async function setCnicVerified(cnicVerified: boolean) {
+    setBusy(true);
+    await fetch(`/api/tutors/${tutor.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cnicVerified }),
     });
     setBusy(false);
     router.refresh();
@@ -300,9 +312,27 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
             <div>
               <span className="text-xs font-medium text-gray-500">CNIC:</span>{" "}
               {tutor.cnicImageUrl ? (
-                <a href={tutor.cnicImageUrl} target="_blank" className="text-xs text-blue-600 hover:underline">
-                  view image
-                </a>
+                <>
+                  <a href={tutor.cnicImageUrl} target="_blank" className="text-xs text-blue-600 hover:underline">
+                    view image
+                  </a>
+                  {/* Admin CNIC check — required for this tutor to count as
+                      "verified" on the public site (lib/tutors/verified.ts). */}
+                  <div className="mt-1.5 flex items-center gap-2">
+                    {tutor.cnicVerifiedAt ? (
+                      <>
+                        <span className={badge("green")}>CNIC verified</span>
+                        <button className="text-xs text-gray-500 hover:underline" disabled={busy} onClick={() => setCnicVerified(false)}>
+                          Unmark
+                        </button>
+                      </>
+                    ) : (
+                      <button className={btnSecondary} disabled={busy} onClick={() => setCnicVerified(true)}>
+                        ✓ Mark CNIC verified
+                      </button>
+                    )}
+                  </div>
+                </>
               ) : (
                 <span className="text-xs text-gray-400">not provided</span>
               )}

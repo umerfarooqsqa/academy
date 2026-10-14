@@ -38,6 +38,20 @@ export function nearestZoneWithin<Z extends ZonePoint>(lat: number, lon: number,
   return best;
 }
 
+/** Case-insensitive match of a typed area/landmark against zone names:
+ * exact first, then either one containing the other. Null when nothing
+ * matches — the typed text is then stored as-is and flagged for the operator
+ * (lib/intake/persist.ts). */
+export function matchZoneByName<Z extends { name: string }>(text: string, zones: Z[]): Z | null {
+  const a = text.toLowerCase().trim();
+  if (!a) return null;
+  return (
+    zones.find((z) => z.name.toLowerCase() === a) ??
+    zones.find((z) => a.includes(z.name.toLowerCase()) || z.name.toLowerCase().includes(a)) ??
+    null
+  );
+}
+
 /** Parses an untrusted latitude/longitude pair (JSON numbers or FormData
  * strings). Returns null unless both are finite and within valid ranges. */
 export function parseCoordPair(rawLat: unknown, rawLon: unknown): { latitude: number; longitude: number } | null {

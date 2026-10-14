@@ -83,6 +83,7 @@ export default async function TutorsPage({
                 <td className={td}>{t.ratingCount > 0 ? `${t.rating.toFixed(1)} (${t.ratingCount})` : "—"}</td>
                 <td className={td}>
                   <span className={badge(statusTone(t.status))}>{t.status}</span>
+                  {t.cnicVerifiedAt && <span className={`${badge("green")} ml-1`}>CNIC ✓</span>}
                 </td>
               </tr>
             ))}

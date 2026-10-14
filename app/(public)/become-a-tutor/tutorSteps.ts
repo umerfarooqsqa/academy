@@ -1,4 +1,4 @@
-// Lili chat questions for /become-a-tutor, in order (wording approved by the
+// Lili form questions for /become-a-tutor, in order (wording approved by the
 // operator 2026-10-14, reusing CLAUDE.md Section 13's tutor follow-up
 // questions where they overlap), and the multipart body POST
 // /api/public/tutor-apply expects — the same fields the old form sent, plus
@@ -9,12 +9,13 @@ import {
   AVAILABILITY_OPTIONS,
   collectGrades,
   parseAmount,
+  splitSubjects,
   validateAmount,
   validatePhone,
   type Answers,
   type LocationAnswer,
   type StepDef,
-} from "../liliChatFlow";
+} from "../liliFormFlow";
 
 function firstName(answers: Answers): string {
   return String(answers.name ?? "").trim().split(/\s+/)[0] ?? "";
@@ -24,12 +25,14 @@ export const TUTOR_STEPS: StepDef[] = [
   {
     kind: "text",
     id: "name",
+    label: "Full name",
     prompt: "Hi! I'm Lili 🦊 What's your full name?",
     placeholder: "e.g. Ayesha Khan",
   },
   {
     kind: "text",
     id: "whatsappId",
+    label: "WhatsApp number",
     prompt: (a) => `Nice to meet you, ${firstName(a)}! Which WhatsApp number should we reach you on?`,
     placeholder: "0300 1234567",
     inputMode: "tel",
@@ -38,30 +41,35 @@ export const TUTOR_STEPS: StepDef[] = [
   {
     kind: "location",
     id: "location",
+    label: "Area",
     prompt:
       "Where are you based? Share your location so we match you with students close by — you'll save on travel time and fuel.",
   },
   {
     kind: "text",
     id: "subjects",
+    label: "Subjects you teach",
     prompt: "Which subject(s) do you teach?",
     placeholder: "e.g. Chemistry, Biology",
   },
   {
     kind: "chips",
     id: "subjectGroup",
+    label: "Category",
     prompt: "Which category best fits?",
     options: SUBJECT_GROUPS.map((g) => ({ value: g, label: SUBJECT_GROUP_LABELS[g] })),
   },
   {
     kind: "text",
     id: "curriculum",
+    label: "Curriculum / level",
     prompt: "Which curriculum/level — O/A-levels, FSc/Intermediate, a specific degree program, or something else?",
     placeholder: "e.g. Cambridge A-levels",
   },
   {
     kind: "text",
     id: "qualification",
+    label: "Qualification",
     prompt: "What's your academic background/qualification?",
     placeholder: "e.g. MBBS (3rd year), A-levels",
   },
@@ -69,18 +77,21 @@ export const TUTOR_STEPS: StepDef[] = [
     kind: "grades",
     id: "grades",
     subjectsFrom: "subjects",
+    label: (subject) => `${subject} grade`,
     prompt: (subject) => `What grade did you get in ${subject}?`,
     placeholder: "e.g. A, A-, 85%",
   },
   {
     kind: "multiChips",
     id: "availability",
+    label: "Availability",
     prompt: "When are you generally available to teach?",
     options: AVAILABILITY_OPTIONS,
   },
   {
     kind: "text",
     id: "expectedFee",
+    label: "Expected fee (PKR/month)",
     prompt: "Expected monthly fee in PKR? (optional)",
     placeholder: "e.g. 20000",
     inputMode: "numeric",
@@ -90,12 +101,14 @@ export const TUTOR_STEPS: StepDef[] = [
   {
     kind: "files",
     id: "cnic",
+    label: "CNIC photo",
     prompt:
       "Almost done! To verify your profile, please send a photo of your CNIC. (Recommended — we need it to activate your profile.)",
   },
   {
     kind: "files",
     id: "marksheets",
+    label: "Marksheet / transcript",
     prompt: "And your latest marksheet/transcript, if you have it handy? This helps us confirm the grades you shared.",
     multiple: true,
   },
@@ -115,7 +128,7 @@ export function buildTutorFormData(answers: Answers): FormData {
   body.append("subjectGroup", String(answers.subjectGroup ?? "other"));
   body.append("curriculum", String(answers.curriculum ?? "").trim());
   body.append("qualification", String(answers.qualification ?? "").trim());
-  body.append("gradesBySubject", JSON.stringify(collectGrades(answers, "grades")));
+  body.append("gradesBySubject", JSON.stringify(collectGrades(answers, "grades", splitSubjects(answers.subjects))));
   for (const tag of (answers.availability as string[] | null) ?? []) body.append("availability", tag);
   const fee = parseAmount(answers.expectedFee);
   if (fee != null) body.append("expectedFee", String(fee));

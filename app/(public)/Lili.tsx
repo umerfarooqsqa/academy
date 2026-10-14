@@ -8,9 +8,9 @@
 
 import styles from "./Lili.module.css";
 
-export default function Lili({ className = "" }: { className?: string }) {
+export default function Lili({ className = "", talking = false }: { className?: string; talking?: boolean }) {
   return (
-    <div className={`${styles.hop} ${className}`} aria-hidden="true">
+    <div className={`${styles.hop} ${talking ? styles.talking : ""} ${className}`} aria-hidden="true">
       <div className={styles.lili}>
         <img src="/lili/tail.webp" alt="" className={`${styles.part} ${styles.tail}`} />
         <img src="/lili/body.webp" alt="" className={styles.part} />

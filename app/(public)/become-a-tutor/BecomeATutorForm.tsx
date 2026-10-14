@@ -1,13 +1,13 @@
 "use client";
 
-// /become-a-tutor's Lili chat (2026-10-14 — replaces BecomeATutorForm).
+// /become-a-tutor's Lili form (2026-10-14 — replaces the all-fields form).
 // Posts the same multipart body the old form did (CNIC/marksheet files
 // included), plus latitude/longitude from "Share my location", to
 // /api/public/tutor-apply — same pipeline and CNIC-gated activation as before.
 
 import type { ZonePoint } from "@/lib/geo/zoneLookup";
-import LiliChat, { type SubmitResult } from "../LiliChat";
-import type { Answers } from "../liliChatFlow";
+import LiliForm, { type SubmitResult } from "../LiliForm";
+import type { Answers } from "../liliFormFlow";
 import { TUTOR_STEPS, buildTutorFormData } from "./tutorSteps";
 
 async function submit(answers: Answers): Promise<SubmitResult> {
@@ -17,6 +17,6 @@ async function submit(answers: Answers): Promise<SubmitResult> {
   return { ok: true, declined: Boolean(body.declined), message: body.message };
 }
 
-export default function BecomeATutorChat({ zones }: { zones: ZonePoint[] }) {
-  return <LiliChat steps={TUTOR_STEPS} zones={zones} onSubmit={submit} />;
+export default function BecomeATutorForm({ zones }: { zones: ZonePoint[] }) {
+  return <LiliForm steps={TUTOR_STEPS} zones={zones} onSubmit={submit} />;
 }

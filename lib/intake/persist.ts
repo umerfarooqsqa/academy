@@ -4,16 +4,11 @@ import { prisma } from "@/lib/db";
 import type { TutorDraft, ParentDraft } from "@/lib/intake/helpers";
 import type { DocKind } from "@/lib/intake/documents";
 import { findNearestZone } from "@/lib/geo/nearestZone";
+import { matchZoneByName } from "@/lib/geo/zoneLookup";
 
 /** Case-insensitive lookup of the AreaZone a free-text area string refers to. */
 export async function resolveZone(area: string) {
-  const zones = await prisma.areaZone.findMany();
-  const a = area.toLowerCase().trim();
-  return (
-    zones.find((z) => z.name.toLowerCase() === a) ??
-    zones.find((z) => a.includes(z.name.toLowerCase()) || z.name.toLowerCase().includes(a)) ??
-    null
-  );
+  return matchZoneByName(area, await prisma.areaZone.findMany());
 }
 
 const ZONE_UNMATCHED_NOTE = "area not in zone table — add the zone or correct the area";
@@ -163,7 +158,8 @@ export async function createParentRequest(opts: {
  * counts (e.g. for the auto-finalize threshold) without a second query. */
 export async function recordTutorDocument(whatsappId: string, kind: DocKind, url: string) {
   if (kind === "cnic") {
-    return prisma.tutor.update({ where: { whatsappId }, data: { cnicImageUrl: url } });
+    // A new CNIC image needs a fresh admin check (lib/tutors/verified.ts).
+    return prisma.tutor.update({ where: { whatsappId }, data: { cnicImageUrl: url, cnicVerifiedAt: null } });
   }
   // Prisma's `push` compiles to Postgres array_append — atomic at the DB
   // level, so two images arriving as separate concurrent webhook deliveries

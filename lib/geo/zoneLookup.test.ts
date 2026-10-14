@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nearestZoneWithin, parseCoordPair } from "./zoneLookup";
+import { matchZoneByName, nearestZoneWithin, parseCoordPair } from "./zoneLookup";
 
 const zones = [
   { name: "North Nazimabad", latitude: 24.9425, longitude: 67.0348, maxKm: 6 },
@@ -30,6 +30,19 @@ describe("nearestZoneWithin", () => {
 
   it("returns null when there are no zones", () => {
     expect(nearestZoneWithin(24.9, 67.0, [])).toBeNull();
+  });
+});
+
+describe("matchZoneByName", () => {
+  it("matches typed areas case-insensitively, exact first then contained", () => {
+    expect(matchZoneByName("malir", zones)?.name).toBe("Malir");
+    expect(matchZoneByName("Block 5, North Nazimabad near Hydri", zones)?.name).toBe("North Nazimabad");
+    expect(matchZoneByName("Gulshan", zones)?.name).toBe("Gulshan-e-Iqbal");
+  });
+
+  it("returns null for unknown or empty text", () => {
+    expect(matchZoneByName("near Hassan Square", zones)).toBeNull();
+    expect(matchZoneByName("   ", zones)).toBeNull();
   });
 });
 

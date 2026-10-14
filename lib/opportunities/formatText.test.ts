@@ -3,7 +3,6 @@ import {
   formatOpportunityLine,
   formatOpportunityCopyText,
   formatDigestText,
-  formatFullDigestText,
   type OpportunityListing,
 } from "@/lib/opportunities/formatText";
 import { generateOpportunityCode, parseOpportunityCode } from "@/lib/opportunities/code";
@@ -14,6 +13,8 @@ const listing: OpportunityListing = {
   subjectGroup: "pre_medical",
   curriculum: "FSc Pre-Medical",
   area: "North Nazimabad",
+  deliveryMode: "in_person",
+  publishedAt: "2026-10-14T10:00:00.000Z",
 };
 
 describe("opportunity code (CLAUDE.md 6.5 step 2/4)", () => {
@@ -39,10 +40,17 @@ describe("opportunity text formatting (CLAUDE.md 6.5, reused by digest + copy bu
     expect(line).toContain("OPP-1234");
   });
 
-  it("copy text includes the reply-with-code instruction (Section 13 self-interest pattern)", () => {
-    const text = formatOpportunityCopyText(listing);
+  it("share text points at the I'm-interested button by code, with the page link when given", () => {
+    const text = formatOpportunityCopyText(listing, "https://example.com/opportunities");
     expect(text).toContain("OPP-1234");
     expect(text).toContain("North Nazimabad");
+    expect(text).toContain("I'm interested");
+    expect(text).toContain("https://example.com/opportunities");
+    expect(formatOpportunityCopyText(listing)).not.toContain("undefined");
+  });
+
+  it("share text says Online instead of an area for online-only requests", () => {
+    expect(formatOpportunityCopyText({ ...listing, deliveryMode: "online" })).toContain("— Online");
   });
 
   it("digest text is one combined post, never one line per opportunity object", () => {
@@ -55,13 +63,5 @@ describe("opportunity text formatting (CLAUDE.md 6.5, reused by digest + copy bu
 
   it("handles zero open opportunities gracefully", () => {
     expect(formatDigestText([])).not.toContain("undefined");
-    expect(formatFullDigestText([])).not.toContain("undefined");
-  });
-
-  it("full digest includes every listing's copy text", () => {
-    const listings = [listing, { ...listing, opportunityCode: "OPP-5678" }];
-    const full = formatFullDigestText(listings);
-    expect(full).toContain("OPP-1234");
-    expect(full).toContain("OPP-5678");
   });
 });

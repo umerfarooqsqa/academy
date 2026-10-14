@@ -50,6 +50,9 @@ model Tutor {
   curriculum         String // free-text board/level, e.g. "Cambridge A-levels", "FSc Pre-Medical"
   gradesBySubject    Json? // self-reported, e.g. {"Biology": "A"} — 6.1 step 9, scored in 6.3 Step 4
   cnicImageUrl       String? // Supabase Storage URL — verification only, never OCR'd (6.1 step 10)
+  cnicVerifiedAt     DateTime? // set when an admin has checked the CNIC on /tutors/[id]; cleared if
+                               // the CNIC image is replaced. Part of the public "verified tutor"
+                               // definition (lib/tutors/verified.ts) — 2026-10-14.
   marksheetImageUrls String[] @default([])
   area               String // AreaZone.name — landmark classified to nearest zone (6.1 step 11)
   latitude           Float? // populated from the matched AreaZone's centroid by default, or

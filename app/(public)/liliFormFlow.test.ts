@@ -4,35 +4,38 @@ import {
   currentStepIndex,
   formatAnswer,
   resolveSteps,
-  rewindTo,
+  setAnswer,
   splitSubjects,
   validateAmount,
   validatePhone,
   type Answers,
   type StepDef,
-} from "./liliChatFlow";
-import { PARENT_STEPS, buildParentPayload } from "./find-a-tutor/parentSteps";
+} from "./liliFormFlow";
+import { makeParentSteps, buildParentPayload, verifiedTutorsLine } from "./find-a-tutor/parentSteps";
+
+const PARENT_STEPS = makeParentSteps();
 import { TUTOR_STEPS, buildTutorFormData } from "./become-a-tutor/tutorSteps";
 
 const defs: StepDef[] = [
-  { kind: "text", id: "name", prompt: "Name?" },
-  { kind: "text", id: "subjects", prompt: "Subjects?" },
-  { kind: "grades", id: "grades", subjectsFrom: "subjects", prompt: (s) => `Grade in ${s}?` },
-  { kind: "text", id: "fee", prompt: "Fee?", optional: true },
+  { kind: "text", id: "name", label: "Name", prompt: "Name?" },
+  { kind: "text", id: "subjects", label: "Subjects", prompt: "Subjects?" },
+  { kind: "grades", id: "grades", subjectsFrom: "subjects", label: (s) => `${s} grade`, prompt: (s) => `Grade in ${s}?` },
+  { kind: "text", id: "fee", label: "Fee", prompt: "Fee?", optional: true },
 ];
 
 describe("step progression", () => {
   it("starts at the first step and advances as answers arrive", () => {
     let answers: Answers = {};
     expect(currentStepIndex(resolveSteps(defs, answers), answers)).toBe(0);
-    answers = { name: "Ayesha" };
+    answers = setAnswer(defs, answers, "name", "Ayesha");
     expect(currentStepIndex(resolveSteps(defs, answers), answers)).toBe(1);
   });
 
-  it("expands one grade step per subject, after subjects is answered", () => {
+  it("expands one labelled grade step per subject, after subjects is answered", () => {
     expect(resolveSteps(defs, {}).map((s) => s.id)).toEqual(["name", "subjects", "fee"]);
     const steps = resolveSteps(defs, { name: "A", subjects: "Biology, Chemistry" });
     expect(steps.map((s) => s.id)).toEqual(["name", "subjects", "grades:Biology", "grades:Chemistry", "fee"]);
+    expect(steps[2].label).toBe("Biology grade");
   });
 
   it("counts a skipped (null) optional step as done", () => {
@@ -42,19 +45,24 @@ describe("step progression", () => {
   });
 });
 
-describe("rewindTo", () => {
-  it("clears the edited step and everything after it", () => {
-    const answers: Answers = { name: "A", subjects: "Biology", "grades:Biology": "A", fee: "5000" };
-    const steps = resolveSteps(defs, answers);
-    expect(rewindTo(steps, answers, "subjects")).toEqual({ name: "A" });
+describe("setAnswer (editing in place)", () => {
+  const full: Answers = { name: "A", subjects: "Biology, Physics", "grades:Biology": "A", "grades:Physics": "B", fee: "5000" };
+
+  it("changes one answer and keeps every later answer", () => {
+    expect(setAnswer(defs, full, "name", "Ayesha")).toEqual({ ...full, name: "Ayesha" });
   });
 
-  it("drops grades for subjects removed by an edit", () => {
-    let answers: Answers = { name: "A", subjects: "Biology, Physics", "grades:Biology": "A", "grades:Physics": "B" };
-    answers = rewindTo(resolveSteps(defs, answers), answers, "subjects");
-    answers = { ...answers, subjects: "Biology" };
-    expect(resolveSteps(defs, answers).map((s) => s.id)).toEqual(["name", "subjects", "grades:Biology", "fee"]);
-    expect(collectGrades(answers, "grades")).toEqual({});
+  it("drops grades for a removed subject, keeps the rest", () => {
+    const next = setAnswer(defs, full, "subjects", "Biology");
+    expect(next).toEqual({ name: "A", subjects: "Biology", "grades:Biology": "A", fee: "5000" });
+    expect(collectGrades(next, "grades", splitSubjects(next.subjects))).toEqual({ Biology: "A" });
+  });
+
+  it("asks only the new grade when a subject is added", () => {
+    const next = setAnswer(defs, full, "subjects", "Biology, Physics, Maths");
+    const steps = resolveSteps(defs, next);
+    expect(steps[currentStepIndex(steps, next)].id).toBe("grades:Maths");
+    expect(next.fee).toBe("5000");
   });
 });
 
@@ -74,12 +82,40 @@ describe("helpers", () => {
     expect(validateAmount("15k")).not.toBeNull();
   });
 
-  it("formats answers for the chat bubbles", () => {
+  it("formats answers for the filled-in rows", () => {
     const loc = PARENT_STEPS.find((s) => s.id === "location")!;
     if (loc.kind === "grades") throw new Error("unexpected");
-    expect(formatAnswer(loc, { latitude: 24.9, longitude: 67.1, area: "Gulshan", viaGps: true })).toBe("📍 My location (Gulshan)");
-    expect(formatAnswer(loc, { latitude: null, longitude: null, area: "Gulshan", viaGps: false })).toBe("Gulshan");
-    expect(formatAnswer(loc, null)).toBe("Skip");
+    expect(formatAnswer(loc, { latitude: 24.9, longitude: 67.1, area: "Gulshan", viaGps: true })).toBe("📍 Gulshan (shared location)");
+    expect(formatAnswer(loc, { latitude: null, longitude: null, area: "near Hassan Square", viaGps: false })).toBe("near Hassan Square");
+    expect(formatAnswer(loc, null)).toBe("—");
+  });
+
+  it("gives every step a label", () => {
+    for (const s of [...resolveSteps(PARENT_STEPS, {}), ...resolveSteps(TUTOR_STEPS, { subjects: "Biology" })]) {
+      expect(s.label, s.id).toBeTruthy();
+    }
+  });
+});
+
+describe("verified tutors line after the parent's location answer", () => {
+  const counts = [
+    { name: "Gulshan-e-Iqbal", latitude: 24.9204, longitude: 67.0971, maxKm: 6, verified: 3, bySubjectGroup: { pre_medical: 2, computer: 1 } },
+  ];
+
+  it("names the count for the chosen category and area", () => {
+    const a: Answers = { subjectGroup: "pre_medical", location: { latitude: null, longitude: null, area: "Gulshan-e-Iqbal", viaGps: false } };
+    expect(verifiedTutorsLine(a, counts)).toBe("Good news — 2 verified Pre-Medical tutors near Gulshan-e-Iqbal! ");
+    const steps = resolveSteps(makeParentSteps(counts), a);
+    const availability = steps.find((s) => s.id === "availability")!;
+    expect(typeof availability.prompt === "function" && availability.prompt(a)).toBe(
+      "Good news — 2 verified Pre-Medical tutors near Gulshan-e-Iqbal! When suits the student?",
+    );
+  });
+
+  it("says nothing when there are none, or for a typed area that isn't a zone", () => {
+    expect(verifiedTutorsLine({ subjectGroup: "skills", location: { latitude: null, longitude: null, area: "Gulshan-e-Iqbal", viaGps: false } }, counts)).toBe("");
+    expect(verifiedTutorsLine({ location: { latitude: null, longitude: null, area: "near Hassan Square", viaGps: false } }, counts)).toBe("");
+    expect(verifiedTutorsLine({}, counts)).toBe("");
   });
 });
 

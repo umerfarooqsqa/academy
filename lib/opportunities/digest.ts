@@ -5,6 +5,7 @@
 import { prisma } from "@/lib/db";
 import { postToFacebookPage } from "@/lib/facebook/client";
 import { formatDigestText, type OpportunityListing } from "@/lib/opportunities/formatText";
+import { filterOpenListings, openListingCutoff } from "@/lib/opportunities/openListings";
 
 const STATE_KEY = "last_facebook_digest_posted_at";
 
@@ -12,34 +13,22 @@ function isSameUtcDay(a: Date, b: Date): boolean {
   return a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
 }
 
-export async function getOpenOpportunityListings(): Promise<OpportunityListing[]> {
+/** Open opportunities for /opportunities, GET /api/opportunities and the
+ * daily Facebook digest. The open/expiry/one-per-request rules live in
+ * lib/opportunities/openListings.ts; this only fetches the rows — every Match
+ * of each parent request with a recently published one, so a sibling's
+ * confirmed interest hides the listing. */
+export async function getOpenOpportunityListings(now: Date = new Date()): Promise<OpportunityListing[]> {
   const [matches, zones] = await Promise.all([
     prisma.match.findMany({
-      where: { publishedToPageAt: { not: null }, interestedTutorId: null },
+      where: { parentRequest: { matches: { some: { publishedToPageAt: { gte: openListingCutoff(now) } } } } },
       include: { parentRequest: true },
-      orderBy: { publishedToPageAt: "desc" },
     }),
-    // Same AreaZone data the admin manages via /zones and /heatmap — reused
-    // here (2026-10-13 feature) so tutors can see live distance from their
-    // own location on the public /opportunities page.
+    // Same AreaZone data the admin manages via /zones and /heatmap — zone
+    // centroids only, never the parent's own coordinate.
     prisma.areaZone.findMany(),
   ]);
-  const zoneByName = new Map(zones.map((z) => [z.name.toLowerCase(), z]));
-
-  return matches
-    .filter((m) => m.opportunityCode)
-    .map((m) => {
-      const zone = zoneByName.get(m.parentRequest.area.toLowerCase());
-      return {
-        opportunityCode: m.opportunityCode as string,
-        subjects: m.parentRequest.subjects,
-        subjectGroup: m.parentRequest.subjectGroup,
-        curriculum: m.parentRequest.curriculum,
-        area: m.parentRequest.area,
-        latitude: zone?.latitude,
-        longitude: zone?.longitude,
-      };
-    });
+  return filterOpenListings(matches, zones, now);
 }
 
 export async function postDailyFacebookDigest(now: Date = new Date()) {

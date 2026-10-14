@@ -1,11 +1,11 @@
 // Public, unauthenticated (2026-10-13 public website feature). Tutor
-// registration chat with Lili (one question at a time, 2026-10-14) — submits
-// straight into the same Tutor pipeline every other intake path uses (see
-// app/api/public/tutor-apply/route.ts). Nav header/footer come from this
+// registration form where Lili asks one question at a time (2026-10-14) —
+// submits straight into the same Tutor pipeline every other intake path uses
+// (see app/api/public/tutor-apply/route.ts). Nav header/footer come from this
 // route group's layout.tsx.
 
 import { prisma } from "@/lib/db";
-import BecomeATutorChat from "./BecomeATutorChat";
+import BecomeATutorForm from "./BecomeATutorForm";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ export default async function BecomeATutorPage() {
           Get matched with students close to you — save on travel time and fuel cost.
         </p>
       </div>
-      <BecomeATutorChat zones={zones} />
+      <BecomeATutorForm zones={zones} />
     </div>
   );
 }

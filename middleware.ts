@@ -44,6 +44,7 @@ const ADMIN_ONLY_PATHS = [
   "/api/marketing-spend",
   "/api/subscriptions",
   "/api/users",
+  "/api/admin", // e.g. exact-location dots on /heatmap (2026-10-14) — never for staff
 ];
 
 function matches(pathname: string, list: string[]): boolean {
