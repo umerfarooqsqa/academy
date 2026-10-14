@@ -16,6 +16,7 @@ import { Baloo_2 } from "next/font/google";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/siteContent";
 import MobileNav from "./MobileNav";
+import Lili from "./Lili";
 
 const headingFont = Baloo_2({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-heading" });
 
@@ -33,12 +34,17 @@ export default async function PublicLayout({ children }: { children: React.React
   return (
     <div className={`${headingFont.variable} bg-[#FFFBF5]`}>
       <header className="sticky top-0 z-10 border-b-2 border-gray-900/5 bg-[#FFFBF5]/90 backdrop-blur">
-        <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5 font-heading text-lg font-extrabold tracking-tight text-gray-900">
-            <span className="flex h-9 w-9 rotate-[-6deg] items-center justify-center rounded-xl bg-rose-500 text-base font-extrabold text-white shadow-[2px_2px_0_0_#1f2937]">
-              {content.siteName.charAt(0).toUpperCase()}
+        <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-2 sm:px-6">
+          <Link href="/" className="group flex items-end gap-2.5 font-heading text-lg font-extrabold tracking-tight text-gray-900">
+            {/* Lili (the fox mascot) sits on top of the logo badge — drawn
+                behind it, so her feet tuck behind the badge's front edge. */}
+            <span className="relative block h-16 w-9">
+              <Lili className="absolute bottom-[32px] left-[9px] w-5" />
+              <span className="absolute bottom-0 left-0 flex h-9 w-9 rotate-[-6deg] items-center justify-center rounded-xl bg-rose-500 text-base font-extrabold text-white shadow-[2px_2px_0_0_#1f2937]">
+                {content.siteName.charAt(0).toUpperCase()}
+              </span>
             </span>
-            {content.siteName}
+            <span className="leading-9">{content.siteName}</span>
           </Link>
           <nav className="hidden items-center gap-5 sm:flex">
             <Link href="/find-a-tutor" className="text-sm font-semibold text-gray-700 hover:text-rose-600">

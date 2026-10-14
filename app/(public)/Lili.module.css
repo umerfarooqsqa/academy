@@ -1,0 +1,97 @@
+/* Lili, the fox mascot perched on the public-site navbar logo (Lili.tsx).
+   Every transform-origin below is a percentage of the shared 637x1016 part
+   canvas the three images were cut from — keep them in sync if the art in
+   public/lili/ is ever re-exported at a different crop. */
+
+.lili {
+  position: relative;
+  aspect-ratio: 637 / 1016;
+  animation: breathe 3.2s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+.part {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.tail {
+  transform-origin: 64.4% 88.6%; /* where the tail meets the body */
+  animation: wag 1.4s ease-in-out infinite alternate;
+}
+
+.head {
+  position: absolute;
+  inset: 0;
+  transform-origin: 43.6% 65.9%; /* the neck, just above the collar */
+  animation: tilt 7s ease-in-out infinite;
+}
+
+.lid {
+  position: absolute;
+  top: 39.6%;
+  width: 24.4%;
+  height: 15.2%;
+  border-radius: 50%;
+  background: #f67126; /* sampled from the fur around the eyes */
+  border-bottom: 1px solid #3b1206;
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  animation: blink 4.6s infinite;
+}
+
+.lidLeft {
+  left: 14.2%;
+}
+
+.lidRight {
+  left: 47.8%;
+}
+
+/* Little hop when the logo is hovered. */
+:global(.group):hover .hop {
+  animation: hop 0.5s ease-out;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.025); }
+}
+
+@keyframes wag {
+  from { transform: rotate(-7deg); }
+  to { transform: rotate(9deg); }
+}
+
+@keyframes tilt {
+  0%, 12%, 100% { transform: rotate(0deg); }
+  22%, 40% { transform: rotate(-5deg); }
+  52%, 70% { transform: rotate(4deg); }
+  82% { transform: rotate(0deg); }
+}
+
+@keyframes blink {
+  0%, 90%, 100% { transform: scaleY(0); }
+  93% { transform: scaleY(1); }
+  96% { transform: scaleY(0); }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-18%); }
+  70% { transform: translateY(2%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lili,
+  .tail,
+  .head,
+  .lid,
+  :global(.group):hover .hop {
+    animation: none;
+  }
+}

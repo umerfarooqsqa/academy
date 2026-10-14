@@ -21,6 +21,7 @@ const PUBLIC_PATHS = [
   "/",
   "/find-a-tutor",
   "/become-a-tutor",
+  "/lili", // mascot images (public/lili/) shown in the public site's navbar
   "/api/auth/login",
   "/api/opportunities",
   "/api/public",
