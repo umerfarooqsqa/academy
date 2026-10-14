@@ -8,11 +8,11 @@
 
 import { NextResponse } from "next/server";
 import { classifyCurriculum, CURRICULUM_AMBIGUOUS_NOTE } from "@/lib/intake/curriculum";
-import { createParentRequest } from "@/lib/intake/persist";
+import { createParentRequest, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
 import { missingParentFields, type ParentDraft } from "@/lib/intake/helpers";
 import { runMatchingForParent } from "@/lib/matching/run";
 import { CURRICULUM_DECLINE } from "@/lib/messages";
-import { extractCoordsFromText } from "@/lib/geo/googleMapsLink";
+import { parseCoordPair } from "@/lib/geo/zoneLookup";
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -32,15 +32,15 @@ export async function POST(req: Request) {
     availability: Array.isArray(body.availability) ? body.availability.filter(Boolean) : null,
   };
 
-  // Never trust client-side extraction for the authoritative value — the
-  // server re-parses the pasted link itself. A non-Maps link or garbled
-  // paste is silently ignored and the dropdown's `area` value is used instead.
-  if (typeof body.locationLink === "string" && body.locationLink.trim()) {
-    const coords = extractCoordsFromText(body.locationLink);
-    if (coords) {
-      draft.preciseLatitude = coords.latitude;
-      draft.preciseLongitude = coords.longitude;
-    }
+  // From the Lili chat's "Share my location" button (browser geolocation).
+  // Validated here — invalid or missing values are ignored and the picked
+  // `area` is used instead. A location-only submission gets its area from
+  // the nearest in-range zone before the required-field check below.
+  const coords = parseCoordPair(body.latitude, body.longitude);
+  if (coords) {
+    draft.preciseLatitude = coords.latitude;
+    draft.preciseLongitude = coords.longitude;
+    await fillAreaFromPreciseLocation(draft);
   }
 
   const missing = missingParentFields(draft);

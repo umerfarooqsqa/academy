@@ -17,23 +17,39 @@ export async function resolveZone(area: string) {
 }
 
 const ZONE_UNMATCHED_NOTE = "area not in zone table — add the zone or correct the area";
+const OUTSIDE_ZONES_NOTE = "location outside all zones — verify";
+
+type LocatedDraft = { area?: string | null; preciseLatitude?: number | null; preciseLongitude?: number | null };
 
 /** Resolves the zone/area + lat/long for a draft that may include a precise
- * coordinate from a shared Google Maps location link (lib/geo/googleMapsLink.ts).
- * When present, the precise coordinate wins over the free-text `area` guess —
- * it overrides both the matched zone (nearest by Haversine distance, not LLM
- * guess) and the stored latitude/longitude (the true coordinate, not the
- * zone's centroid). Falls back to the existing name-based resolveZone()
- * behavior when no precise coordinate is present — completely unchanged for
- * the common case. */
-async function resolveAreaAndCoords(draft: { area?: string | null; preciseLatitude?: number | null; preciseLongitude?: number | null }) {
+ * coordinate (a shared Google Maps location link, or the public site's "Share
+ * my location" button). When present and within the nearest zone's maxKm,
+ * the precise coordinate wins over the free-text `area` — it picks the zone
+ * (nearest by Haversine distance, not a guess) and is stored as-is instead of
+ * the zone centroid. When it's outside every zone's range (2026-10-14
+ * decision), it is NOT snapped to the nearest zone: the area falls back to
+ * the person's own `area` answer, the true coordinate is still stored, and
+ * the record is flagged. No precise coordinate → the existing name-based
+ * resolveZone() behavior, unchanged. */
+async function resolveAreaAndCoords(draft: LocatedDraft) {
   if (draft.preciseLatitude != null && draft.preciseLongitude != null) {
-    const zone = await findNearestZone(draft.preciseLatitude, draft.preciseLongitude);
+    const nearest = await findNearestZone(draft.preciseLatitude, draft.preciseLongitude);
+    if (nearest?.inRange) {
+      return {
+        zone: nearest.zone,
+        areaName: nearest.zone.name,
+        latitude: draft.preciseLatitude,
+        longitude: draft.preciseLongitude,
+        outsideZones: false,
+      };
+    }
+    const zone = draft.area ? await resolveZone(draft.area) : null;
     return {
       zone,
-      areaName: zone?.name ?? draft.area ?? "",
+      areaName: draft.area ?? "",
       latitude: draft.preciseLatitude,
       longitude: draft.preciseLongitude,
+      outsideZones: nearest != null,
     };
   }
   const zone = draft.area ? await resolveZone(draft.area) : null;
@@ -42,7 +58,18 @@ async function resolveAreaAndCoords(draft: { area?: string | null; preciseLatitu
     areaName: draft.area ?? "",
     latitude: zone?.latitude ?? null,
     longitude: zone?.longitude ?? null,
+    outsideZones: false,
   };
+}
+
+/** For web submissions that only shared a location (no area picked): fills
+ * draft.area from the nearest zone when it's in range, so the required-field
+ * checks don't reject a valid location-only submission. Out of range or no
+ * coordinate → leaves `area` untouched. */
+export async function fillAreaFromPreciseLocation(draft: LocatedDraft) {
+  if (draft.area || draft.preciseLatitude == null || draft.preciseLongitude == null) return;
+  const nearest = await findNearestZone(draft.preciseLatitude, draft.preciseLongitude);
+  if (nearest?.inRange) draft.area = nearest.zone.name;
 }
 
 export async function upsertTutor(opts: {
@@ -54,8 +81,12 @@ export async function upsertTutor(opts: {
   internalNote?: string | null;
 }) {
   const { whatsappId, draft, rawMessage, campaignId, status } = opts;
-  const { zone, areaName, latitude, longitude } = await resolveAreaAndCoords(draft);
-  const notes = [opts.internalNote, zone ? null : draft.area ? ZONE_UNMATCHED_NOTE : null]
+  const { zone, areaName, latitude, longitude, outsideZones } = await resolveAreaAndCoords(draft);
+  const notes = [
+    opts.internalNote,
+    outsideZones ? OUTSIDE_ZONES_NOTE : null,
+    zone ? null : draft.area ? ZONE_UNMATCHED_NOTE : null,
+  ]
     .filter(Boolean)
     .join("; ");
 
@@ -95,10 +126,11 @@ export async function createParentRequest(opts: {
   internalNote?: string | null;
 }) {
   const { whatsappId, draft, rawMessage, campaignId, status } = opts;
-  const { zone, areaName, latitude, longitude } = await resolveAreaAndCoords(draft);
+  const { zone, areaName, latitude, longitude, outsideZones } = await resolveAreaAndCoords(draft);
   const notes = [
     opts.internalNote,
     draft.budget == null ? "budget not provided — confirm with parent" : null,
+    outsideZones ? OUTSIDE_ZONES_NOTE : null,
     zone ? null : draft.area ? ZONE_UNMATCHED_NOTE : null,
   ]
     .filter(Boolean)

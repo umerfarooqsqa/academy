@@ -1,15 +1,19 @@
-// Public, unauthenticated (2026-10-13 public website feature). Parent
-// request form — submits straight into the same ParentRequest pipeline every
-// other intake path uses (see app/api/public/parent-request/route.ts). Nav
-// header/footer come from this route group's layout.tsx.
+// Public, unauthenticated (2026-10-13 public website feature). Parent request
+// chat with Lili (one question at a time, 2026-10-14) — submits straight into
+// the same ParentRequest pipeline every other intake path uses (see
+// app/api/public/parent-request/route.ts). Nav header/footer come from this
+// route group's layout.tsx.
 
 import { prisma } from "@/lib/db";
-import FindATutorForm from "./FindATutorForm";
+import FindATutorChat from "./FindATutorChat";
 
 export const dynamic = "force-dynamic";
 
 export default async function FindATutorPage() {
-  const zones = await prisma.areaZone.findMany({ select: { name: true }, orderBy: { name: "asc" } });
+  const zones = await prisma.areaZone.findMany({
+    select: { name: true, latitude: true, longitude: true, maxKm: true },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6">
@@ -20,7 +24,7 @@ export default async function FindATutorPage() {
           own area.
         </p>
       </div>
-      <FindATutorForm zoneNames={zones.map((z) => z.name)} />
+      <FindATutorChat zones={zones} />
     </div>
   );
 }

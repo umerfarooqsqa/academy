@@ -15,12 +15,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { classifyCurriculum, CURRICULUM_AMBIGUOUS_NOTE } from "@/lib/intake/curriculum";
-import { upsertTutor, recordTutorDocument } from "@/lib/intake/persist";
+import { upsertTutor, recordTutorDocument, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
 import { missingTutorFields, type TutorDraft } from "@/lib/intake/helpers";
 import { extensionForMime, buildDocumentStoragePath } from "@/lib/intake/documents";
 import { uploadToSupabaseStorage } from "@/lib/storage/supabase";
 import { CURRICULUM_DECLINE } from "@/lib/messages";
-import { extractCoordsFromText } from "@/lib/geo/googleMapsLink";
+import { parseCoordPair } from "@/lib/geo/zoneLookup";
 
 function parseGradesBySubject(raw: FormDataEntryValue | null): Record<string, string> | null {
   if (typeof raw !== "string" || !raw.trim()) return null;
@@ -67,16 +67,15 @@ export async function POST(req: Request) {
     expectedFee: form.get("expectedFee") ? Number(form.get("expectedFee")) : null,
   };
 
-  // Never trust client-side extraction for the authoritative value — the
-  // server re-parses the pasted link itself. A non-Maps link or garbled
-  // paste is silently ignored and the dropdown's `area` value is used instead.
-  const locationLink = form.get("locationLink") as string | null;
-  if (locationLink && locationLink.trim()) {
-    const coords = extractCoordsFromText(locationLink);
-    if (coords) {
-      draft.preciseLatitude = coords.latitude;
-      draft.preciseLongitude = coords.longitude;
-    }
+  // From the Lili chat's "Share my location" button (browser geolocation).
+  // Validated here — invalid or missing values are ignored and the picked
+  // `area` is used instead. A location-only submission gets its area from
+  // the nearest in-range zone before the required-field check below.
+  const coords = parseCoordPair(form.get("latitude"), form.get("longitude"));
+  if (coords) {
+    draft.preciseLatitude = coords.latitude;
+    draft.preciseLongitude = coords.longitude;
+    await fillAreaFromPreciseLocation(draft);
   }
 
   if (draft.curriculum && classifyCurriculum(draft.curriculum) === "decline") {

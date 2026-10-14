@@ -1,29 +1,17 @@
-// Resolves a precise coordinate (e.g. from a shared Google Maps location
-// link, see lib/geo/googleMapsLink.ts) to the nearest known AreaZone, as an
-// alternative to the LLM's/person's free-text area guess. Reuses the same
-// Haversine function the matching engine already uses (lib/matching/engine.ts)
-// — no new distance math.
+// Resolves a precise coordinate (a shared Google Maps location link — see
+// lib/geo/googleMapsLink.ts — or a browser "Share my location" tap on the
+// public site) to the nearest known AreaZone. The distance math lives in
+// lib/geo/zoneLookup.ts so the browser can run the same check.
 
 import { prisma } from "@/lib/db";
-import { haversineKm } from "@/lib/matching/engine";
+import { nearestZoneWithin, type NearestZoneResult } from "@/lib/geo/zoneLookup";
 import type { AreaZone } from "@prisma/client";
 
-/** Returns the AreaZone whose centroid is closest to (lat, lon), or null if
- * no zones exist yet. No maxKm cutoff here — the nearest zone is still the
- * right zone even if it's far away in a sparse area; maxKm stays the matching
- * engine's Tier B concern (6.3 Step 2), untouched by this lookup. */
-export async function findNearestZone(lat: number, lon: number): Promise<AreaZone | null> {
+/** Returns the AreaZone whose centroid is closest to (lat, lon), its
+ * distance, and whether it's within that zone's maxKm — or null if no zones
+ * exist yet. Callers must treat `inRange: false` as "outside all zones", not
+ * as a match (2026-10-14 decision, see zoneLookup.ts). */
+export async function findNearestZone(lat: number, lon: number): Promise<NearestZoneResult<AreaZone> | null> {
   const zones = await prisma.areaZone.findMany();
-  if (zones.length === 0) return null;
-
-  let nearest = zones[0];
-  let nearestDistance = haversineKm(lat, lon, nearest.latitude, nearest.longitude);
-  for (const zone of zones.slice(1)) {
-    const distance = haversineKm(lat, lon, zone.latitude, zone.longitude);
-    if (distance < nearestDistance) {
-      nearest = zone;
-      nearestDistance = distance;
-    }
-  }
-  return nearest;
+  return nearestZoneWithin(lat, lon, zones);
 }
