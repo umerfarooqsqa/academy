@@ -49,9 +49,9 @@ function CalendarIcon() {
 }
 
 const STEPS = [
-  { Icon: SearchIcon, bg: "bg-rose-400", rotate: "-rotate-3" },
-  { Icon: MatchIcon, bg: "bg-amber-400", rotate: "rotate-2" },
-  { Icon: CalendarIcon, bg: "bg-teal-400", rotate: "-rotate-2" },
+  { Icon: SearchIcon, badge: "bg-rose-500", tint: "bg-rose-100 text-rose-600" },
+  { Icon: MatchIcon, badge: "bg-amber-400", tint: "bg-amber-100 text-amber-600" },
+  { Icon: CalendarIcon, badge: "bg-teal-400", tint: "bg-teal-100 text-teal-700" },
 ];
 
 export default async function HomePage() {
@@ -106,25 +106,44 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-        <div className="text-center">
-          <h2 className="font-heading text-sm font-extrabold uppercase tracking-wider text-rose-500">How it works</h2>
-          <p className="mt-2 font-heading text-3xl font-extrabold text-gray-900 sm:text-4xl">Three easy steps</p>
-        </div>
-        <div className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-3">
-          {content.howItWorks.map((step, i) => {
-            const { Icon, bg, rotate } = STEPS[i % STEPS.length];
-            return (
-              <div key={i} className={`rounded-3xl border-2 border-gray-900 bg-white p-6 text-center shadow-[5px_5px_0_0_#1f2937] ${rotate}`}>
-                <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-gray-900 ${bg} text-white`}>
-                  <Icon />
-                </div>
-                <div className="mt-4 font-heading text-xs font-extrabold tracking-wider text-gray-400">STEP {i + 1}</div>
-                <p className="mt-2 text-base text-gray-700">{step}</p>
-              </div>
-            );
-          })}
+      {/* How it works — a numbered path (2026-10-14 redesign): badges joined by
+          a dashed line (left-to-right on desktop, top-to-bottom on phones),
+          each with a card holding the /website-content step text. */}
+      <section className="border-y-2 border-gray-900/5 bg-amber-50/70">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+          <div className="text-center">
+            <h2 className="font-heading text-sm font-extrabold uppercase tracking-wider text-rose-500">How it works</h2>
+            <p className="mt-2 font-heading text-3xl font-extrabold text-gray-900 sm:text-4xl">
+              {content.howItWorks.length === 3 ? "Three easy steps" : "How it works"}
+            </p>
+          </div>
+          <ol className="relative mt-12 grid grid-cols-1 gap-8 sm:mt-16 sm:grid-cols-3 sm:gap-8">
+            {content.howItWorks.map((step, i) => {
+              const { Icon, badge, tint } = STEPS[i % STEPS.length];
+              return (
+                <li key={i} className="relative flex gap-4 sm:flex-col sm:items-center sm:text-center">
+                  {/* Dashed link to the next step's badge: down on phones, across on desktop. */}
+                  {i < content.howItWorks.length - 1 && (
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute -bottom-8 left-[26px] top-14 border-l-4 border-dashed border-gray-900/15 sm:bottom-auto sm:left-[calc(50%+1.75rem)] sm:right-[calc(-50%-0.25rem)] sm:top-[26px] sm:border-l-0 sm:border-t-4"
+                    />
+                  )}
+                  <div
+                    className={`relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-gray-900 font-heading text-2xl font-extrabold text-white shadow-[3px_3px_0_0_#1f2937] ${badge}`}
+                  >
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 rounded-3xl border-2 border-gray-900 bg-white p-5 shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#1f2937] sm:mt-6 sm:w-full sm:p-6">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${tint} sm:mx-auto`}>
+                      <Icon />
+                    </div>
+                    <p className="mt-4 text-base font-semibold leading-snug text-gray-800 sm:text-lg">{step}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </section>
 

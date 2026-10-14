@@ -88,7 +88,7 @@ export default function NearYouSection({
     : [];
 
   return (
-    <section className="mx-auto max-w-6xl px-4 pb-16 pt-4 sm:px-6 sm:pb-24 sm:pt-8">
+    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
       <div className="text-center">
         <h2 className="font-heading text-3xl font-extrabold text-gray-900 sm:text-4xl">What&apos;s near you?</h2>
         <p className="mx-auto mt-2 max-w-md text-base text-gray-600">
