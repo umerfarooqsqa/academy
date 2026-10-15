@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { decideMatch, confirmTutorInterest, type ApprovalAction } from "@/lib/matches/actions";
+import { decideMatch, confirmTutorInterest, unmatchMatch, type ApprovalAction } from "@/lib/matches/actions";
 import { currentUserEmail } from "@/lib/auth/currentUser";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -16,7 +16,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 // Handles every /matches dashboard action (Section 7): approve/reject/edit
 // (6.4), demoSlots entry + demoScheduledAt confirmation (6.6), and marking a
 // tutor's confirmed interest (6.5 step 5, manual fallback while WhatsApp
-// confirmation isn't wired live).
+// confirmation isn't wired live), and unmatching a tutor who declined or
+// whose demo failed (2026-10-15).
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
@@ -26,6 +27,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const actor = (await currentUserEmail()) ?? "dashboard";
     const match = await decideMatch(id, action, { note: body.note, actor });
     return NextResponse.json({ match });
+  }
+
+  if (body.action === "unmatch") {
+    if (body.reason !== "tutor_declined" && body.reason !== "demo_failed") {
+      return NextResponse.json({ error: "reason must be tutor_declined or demo_failed" }, { status: 400 });
+    }
+    try {
+      const actor = (await currentUserEmail()) ?? "dashboard";
+      const match = await unmatchMatch(id, body.reason, { note: body.note, actor });
+      return NextResponse.json({ match });
+    } catch (err) {
+      return NextResponse.json({ error: (err as Error).message }, { status: 400 });
+    }
   }
 
   if (body.action === "confirm_interest") {

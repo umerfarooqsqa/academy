@@ -137,3 +137,59 @@ export async function declineTutorInterest(matchId: string) {
     data: { notifyAt: new Date() },
   });
 }
+
+/** Match statuses a tutor can still be unmatched from — after approval and
+ * before payment (2026-10-15). */
+export const UNMATCHABLE_STATUSES = ["approved", "sent_to_parent", "selected", "demo_scheduled"];
+
+export type UnmatchReason = "tutor_declined" | "demo_failed";
+
+const UNMATCH_REASON_TEXT: Record<UnmatchReason, string> = {
+  tutor_declined: "tutor declined to teach",
+  demo_failed: "demo didn't work out",
+};
+
+/**
+ * Unmatch a tutor from a request (2026-10-15 operator request): the tutor
+ * won't take the student, or the demo failed. The Match becomes "unmatched"
+ * (logged to ApprovalLog like any decision), the request goes back on
+ * /opportunities and is re-posted to the Facebook Page at the next 3-hourly
+ * run, and the matching engine won't propose this tutor for it again
+ * (lib/matching/run.ts skips tutors already matched to the request).
+ */
+export async function unmatchMatch(
+  matchId: string,
+  reason: UnmatchReason,
+  opts: { note?: string | null; actor?: string } = {},
+) {
+  const before = await prisma.match.findUnique({ where: { id: matchId } });
+  if (!before) throw new Error(`Match ${matchId} not found`);
+  if (!UNMATCHABLE_STATUSES.includes(before.status)) {
+    throw new Error(`A match that is "${before.status}" can't be unmatched`);
+  }
+
+  const reasonText = UNMATCH_REASON_TEXT[reason];
+  const internalNote = [`unmatched — ${reasonText}`, opts.note?.trim(), before.internalNote].filter(Boolean).join("; ");
+  const updated = await prisma.match.update({ where: { id: matchId }, data: { status: "unmatched", internalNote } });
+
+  await prisma.approvalLog.create({
+    data: {
+      matchId,
+      action: "unmatched",
+      before: { status: before.status, score: before.score, internalNote: before.internalNote },
+      after: { status: "unmatched", reason, note: opts.note ?? null, actor: opts.actor ?? "dashboard" },
+    },
+  });
+
+  // Back to looking for a tutor: pending again unless another live match
+  // remains, and re-advertised on the Facebook Page.
+  const live = await prisma.match.count({
+    where: { parentRequestId: before.parentRequestId, status: { notIn: ["rejected", "unmatched"] } },
+  });
+  await prisma.parentRequest.update({
+    where: { id: before.parentRequestId },
+    data: { facebookPostedAt: null, ...(live === 0 ? { status: "pending" } : {}) },
+  });
+
+  return updated;
+}

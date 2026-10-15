@@ -27,7 +27,10 @@ export async function runMatchingForParent(parentRequestId: string): Promise<Mat
 
   const [tutors, zones] = await Promise.all([
     prisma.tutor.findMany({
-      where: { status: "active" },
+      // Skip tutors already matched to this request — no duplicate proposals
+      // on a re-run, and a tutor who declined or whose demo failed
+      // (status "unmatched", 2026-10-15) isn't proposed again.
+      where: { status: "active", matches: { none: { parentRequestId } } },
       include: { subscriptions: true },
     }),
     prisma.areaZone.findMany(),

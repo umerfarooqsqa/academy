@@ -12,6 +12,7 @@
 //   - it came in within the last OPPORTUNITY_MAX_AGE_DAYS (14)
 //   - no tutor has said "I'm interested" in it yet, and no tutor has been
 //     placed with it (a match selected / demo scheduled / paid / completed)
+//     — ignoring matches that were rejected or unmatched
 
 import type { OpportunityListing } from "@/lib/opportunities/formatText";
 
@@ -19,6 +20,11 @@ export const OPPORTUNITY_MAX_AGE_DAYS = 14;
 
 /** Match statuses meaning a tutor is already placed with the request. */
 export const PLACED_STATUSES = ["selected", "demo_scheduled", "paid", "completed"];
+
+/** Matches that no longer count: rejected by the operator, or unmatched
+ * because the tutor declined / the demo failed (2026-10-15) — such a request
+ * is open again. */
+export const ENDED_STATUSES = ["rejected", "unmatched"];
 
 export interface RequestRow {
   id: string;
@@ -51,7 +57,7 @@ export function isOpenRequest(r: RequestRow, now: Date = new Date()): boolean {
     !r.publicHiddenAt &&
     !!r.opportunityCode &&
     r.createdAt >= openListingCutoff(now) &&
-    !r.matches.some((m) => m.interestedTutorId || PLACED_STATUSES.includes(m.status))
+    !r.matches.some((m) => !ENDED_STATUSES.includes(m.status) && (m.interestedTutorId || PLACED_STATUSES.includes(m.status)))
   );
 }
 

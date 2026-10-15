@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { tutorOpportunityNotification, demoSlotOffer } from "@/lib/messages";
 import { btnPrimary, btnSecondary, btnDanger, badge, statusTone, input } from "@/app/components/ui";
 
+// Matches that can still be unmatched — after approval, before payment
+// (mirrors lib/matches/actions.ts#UNMATCHABLE_STATUSES).
+const UNMATCHABLE = ["approved", "sent_to_parent", "selected", "demo_scheduled"];
+
 async function copy(text: string, onDone: () => void) {
   try {
     await navigator.clipboard.writeText(text);
@@ -40,6 +44,8 @@ export default function MatchRow({ match }: MatchRowProps) {
   );
   const [copiedOpportunity, setCopiedOpportunity] = useState(false);
   const [copiedDemoOffer, setCopiedDemoOffer] = useState(false);
+  const [showUnmatch, setShowUnmatch] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function act(action: "approve" | "reject" | "edit") {
     setBusy(true);
@@ -62,6 +68,22 @@ export default function MatchRow({ match }: MatchRowProps) {
     });
     setBusy(false);
     setShowSlots(false);
+    router.refresh();
+  }
+
+  // Unmatch (2026-10-15): the tutor won't take this student, or the demo
+  // failed. The request goes back on /opportunities and the Facebook Page.
+  async function unmatch(reason: "tutor_declined" | "demo_failed") {
+    setBusy(true);
+    setError(null);
+    const res = await fetch(`/api/matches/${match.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "unmatch", reason, note: note || undefined }),
+    });
+    if (!res.ok) setError((await res.json().catch(() => ({}))).error ?? "Couldn't unmatch — please try again.");
+    setBusy(false);
+    setShowUnmatch(false);
     router.refresh();
   }
 
@@ -177,6 +199,29 @@ export default function MatchRow({ match }: MatchRowProps) {
             )}
           </div>
         )}
+        {UNMATCHABLE.includes(match.status) && (
+          <div className="mt-2">
+            {showUnmatch ? (
+              <div className="flex flex-col gap-1.5 rounded border border-red-200 bg-red-50 p-2">
+                <p className="text-xs text-red-800">Why? The student goes back on /opportunities and Facebook.</p>
+                <button className={btnDanger} disabled={busy} onClick={() => unmatch("tutor_declined")}>
+                  Tutor declined
+                </button>
+                <button className={btnDanger} disabled={busy} onClick={() => unmatch("demo_failed")}>
+                  Demo didn&apos;t work out
+                </button>
+                <button className={btnSecondary} disabled={busy} onClick={() => setShowUnmatch(false)}>
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button className={btnSecondary} disabled={busy} onClick={() => setShowUnmatch(true)}>
+                Unmatch tutor…
+              </button>
+            )}
+          </div>
+        )}
+        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
         <div className="mt-2">
           <input
             className={input}

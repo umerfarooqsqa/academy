@@ -44,6 +44,7 @@ export function statusTone(status: string): "gray" | "green" | "amber" | "red" |
     pending: "amber",
     awaiting_approval: "amber",
     inactive: "gray",
+    unmatched: "red",
     closed: "gray",
     cancelled: "gray",
     lapsed: "amber",

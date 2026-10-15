@@ -73,12 +73,19 @@ export async function POST(req: Request) {
 
   // Someone may have claimed it a moment ago — re-check before recording.
   const claimedAlready = await prisma.match.findFirst({
-    where: { parentRequestId: request.id, interestedTutorId: { not: null } },
+    where: { parentRequestId: request.id, interestedTutorId: { not: null }, status: { notIn: ["rejected", "unmatched"] } },
     select: { id: true },
   });
   if (claimedAlready) return reply("taken", TAKEN);
 
-  const existing = await prisma.match.findFirst({ where: { parentRequestId: request.id, tutorId: tutor.id }, select: { id: true } });
+  const existing = await prisma.match.findFirst({
+    where: { parentRequestId: request.id, tutorId: tutor.id },
+    select: { id: true, status: true },
+  });
+  // A tutor already turned down / unmatched for this student (2026-10-15).
+  if (existing && (existing.status === "rejected" || existing.status === "unmatched")) {
+    return reply("taken", "Thanks — this one isn't available to you, but have a look at the others!");
+  }
   if (existing) {
     await prisma.match.update({ where: { id: existing.id }, data: { interestedTutorId: tutor.id } });
   } else {

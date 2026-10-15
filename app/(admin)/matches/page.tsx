@@ -19,6 +19,7 @@ const STATUSES = [
   "demo_scheduled",
   "paid",
   "completed",
+  "unmatched",
 ];
 
 export default async function MatchesPage({

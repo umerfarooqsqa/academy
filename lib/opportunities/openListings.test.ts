@@ -55,6 +55,21 @@ describe("isOpenRequest (2026-10-15: every open request is public)", () => {
   });
 });
 
+describe("unmatched and rejected matches (2026-10-15)", () => {
+  it("re-opens a request whose interested or placed tutor was unmatched or rejected", () => {
+    expect(isOpenRequest(req({ matches: [{ status: "unmatched", interestedTutorId: "t1" }] }), now)).toBe(true);
+    expect(isOpenRequest(req({ matches: [{ status: "rejected", interestedTutorId: "t1" }] }), now)).toBe(true);
+  });
+
+  it("stays hidden while another tutor is still interested or placed", () => {
+    const matches = [
+      { status: "unmatched", interestedTutorId: "t1" },
+      { status: "demo_scheduled", interestedTutorId: null },
+    ];
+    expect(isOpenRequest(req({ matches }), now)).toBe(false);
+  });
+});
+
 describe("filterOpenListings", () => {
   it("returns public fields only, with zone centroid and the request date, newest first", () => {
     const listings = filterOpenListings(
