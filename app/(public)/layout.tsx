@@ -16,7 +16,6 @@ import { Baloo_2 } from "next/font/google";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/siteContent";
 import MobileNav from "./MobileNav";
-import Lili from "./Lili";
 
 const headingFont = Baloo_2({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-heading" });
 
@@ -35,16 +34,25 @@ export default async function PublicLayout({ children }: { children: React.React
     <div className={`${headingFont.variable} bg-[#FFFBF5]`}>
       <header className="sticky top-0 z-10 border-b-2 border-gray-900/5 bg-[#FFFBF5]/90 backdrop-blur">
         <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-2 sm:px-6">
-          <Link href="/" className="group flex items-end gap-2.5 font-heading text-lg font-extrabold tracking-tight text-gray-900">
-            {/* Lili (the fox mascot) sits on top of the logo badge — drawn
-                behind it, so her feet tuck behind the badge's front edge. */}
-            <span className="relative block h-16 w-9">
-              <Lili className="absolute bottom-[32px] left-[9px] w-5" />
-              <span className="absolute bottom-0 left-0 flex h-9 w-9 rotate-[-6deg] items-center justify-center rounded-xl bg-rose-500 text-base font-extrabold text-white shadow-[2px_2px_0_0_#1f2937]">
-                {content.siteName.charAt(0).toUpperCase()}
-              </span>
+          {/* The logo (2026-10-15): Lili's head on the rose badge (public/brand/,
+              cut from her artwork) + the site name in the logo's colours —
+              first word rose, the rest dark. The name stays editable in
+              /website-content; the badge does a little hop on hover. */}
+          <Link href="/" className="group flex items-center gap-2.5" aria-label={`${content.siteName} — home`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/lili-logo-mark-192.webp"
+              alt=""
+              width={167}
+              height={192}
+              className="h-14 w-auto transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:-rotate-6"
+            />
+            <span className="font-heading font-extrabold leading-[0.9] tracking-tight">
+              <span className="block text-[26px] text-rose-500">{content.siteName.split(" ")[0]}</span>
+              {content.siteName.split(" ").length > 1 && (
+                <span className="block text-[15px] text-gray-900">{content.siteName.split(" ").slice(1).join(" ")}</span>
+              )}
             </span>
-            <span className="leading-9">{content.siteName}</span>
           </Link>
           <nav className="hidden items-center gap-5 sm:flex">
             <Link href="/find-a-tutor" className="text-sm font-semibold text-gray-700 hover:text-rose-600">
