@@ -75,6 +75,11 @@ export default async function PublicLayout({ children }: { children: React.React
             © {new Date().getFullYear()} {content.siteName}
           </p>
           <p className="mt-1 text-xs text-gray-400">A registered company — part of Suntex Services.</p>
+          <p className="mt-2 text-xs">
+            <Link href="/privacy" className="font-semibold text-gray-500 underline underline-offset-2 hover:text-gray-900">
+              Privacy Policy
+            </Link>
+          </p>
         </div>
       </footer>
     </div>

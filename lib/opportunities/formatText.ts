@@ -53,9 +53,16 @@ export function formatOpportunityCopyText(listing: OpportunityListing, opportuni
 }
 
 /** One post per day, not one per opportunity (6.5) — e.g.
- * "Looking for tutors this week: Biology (North Nazimabad), Computer Science (Gulshan)..." */
-export function formatDigestText(listings: OpportunityListing[]): string {
+ * "Looking for tutors this week: Biology (North Nazimabad), Computer Science (Online)..."
+ * Subjects and area only — never any parent contact details. `opportunitiesUrl`
+ * (absolute) is appended so readers can tap straight through. */
+export function formatDigestText(listings: OpportunityListing[], opportunitiesUrl?: string): string {
   if (listings.length === 0) return "No open tutoring opportunities right now — check back soon!";
-  const items = listings.map((l) => `${l.subjects.join("/") || "Tutor"} (${l.area})`).join(", ");
-  return `Looking for tutors this week: ${items}. Interested? Tap "I'm interested" on our Opportunities page.`;
+  const items = listings
+    .map((l) => `${l.subjects.join("/") || "Tutor"} (${l.deliveryMode === "online" ? "Online" : l.area})`)
+    .join(", ");
+  const action = opportunitiesUrl
+    ? `Interested? Tap "I'm interested" on our Opportunities page: ${opportunitiesUrl}`
+    : `Interested? Tap "I'm interested" on our Opportunities page.`;
+  return `Looking for tutors this week: ${items}. ${action}`;
 }

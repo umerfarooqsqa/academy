@@ -56,6 +56,16 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
         <input className={input} value={content.siteName} onChange={(e) => setContent({ ...content, siteName: e.target.value })} />
       </div>
       <div>
+        <label className={label}>Contact email (shown on the Privacy page for data requests)</label>
+        <input
+          className={input}
+          type="email"
+          placeholder="e.g. hello@yourdomain.com"
+          value={content.contactEmail}
+          onChange={(e) => setContent({ ...content, contactEmail: e.target.value })}
+        />
+      </div>
+      <div>
         <label className={label}>Eyebrow badge (small text above the headline)</label>
         <input className={input} value={content.heroEyebrow} onChange={(e) => setContent({ ...content, heroEyebrow: e.target.value })} />
       </div>

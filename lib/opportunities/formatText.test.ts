@@ -61,6 +61,16 @@ describe("opportunity text formatting (CLAUDE.md 6.5, reused by digest + copy bu
     expect(digest).toContain("Gulshan-e-Iqbal");
   });
 
+  it("digest includes the page link when given, says Online for online requests, and never contact details", () => {
+    const digest = formatDigestText(
+      [listing, { ...listing, opportunityCode: "OPP-5678", deliveryMode: "online", subjects: ["Physics"] }],
+      "https://example.com/opportunities",
+    );
+    expect(digest).toContain("https://example.com/opportunities");
+    expect(digest).toContain("Physics (Online)");
+    expect(digest).not.toMatch(/\d{10}|whatsapp|\+92/i);
+  });
+
   it("handles zero open opportunities gracefully", () => {
     expect(formatDigestText([])).not.toContain("undefined");
   });

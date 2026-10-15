@@ -21,6 +21,7 @@ const PUBLIC_PATHS = [
   "/",
   "/find-a-tutor",
   "/become-a-tutor",
+  "/privacy", // privacy policy — also the Meta app's Privacy Policy URL (2026-10-15)
   "/lili", // mascot images (public/lili/) shown in the public site's navbar
   "/api/auth/login",
   "/api/opportunities",

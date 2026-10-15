@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { postToFacebookPage } from "@/lib/facebook/client";
 import { formatDigestText, type OpportunityListing } from "@/lib/opportunities/formatText";
 import { filterOpenListings, openListingCutoff } from "@/lib/opportunities/openListings";
+import { PUBLIC_SITE_URL } from "@/lib/site";
 
 const STATE_KEY = "last_facebook_digest_posted_at";
 
@@ -38,7 +39,10 @@ export async function postDailyFacebookDigest(now: Date = new Date()) {
   }
 
   const listings = await getOpenOpportunityListings();
-  const text = formatDigestText(listings);
+  // Nothing open → no post at all, rather than a daily "nothing right now"
+  // that clutters the Page (2026-10-15).
+  if (listings.length === 0) return { posted: false, reason: "No open tuitions", listingCount: 0 };
+  const text = formatDigestText(listings, `${PUBLIC_SITE_URL}/opportunities`);
   const result = await postToFacebookPage(text);
 
   if (result.ok) {
