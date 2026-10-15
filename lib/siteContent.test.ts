@@ -19,6 +19,14 @@ describe("normalizeSiteContent", () => {
     expect("howItWorks" in c).toBe(false);
     expect(c.faqs.length).toBeGreaterThan(0);
     expect(c.whatsappNumber).toBe("");
+    expect(c.terms.length).toBeGreaterThan(0);
+    expect(c.termsUpdatedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("keeps edited terms and drops malformed sections", () => {
+    const c = normalizeSiteContent({ terms: [{ heading: "A", body: "B" }, null, "x"], termsUpdatedOn: "nonsense" });
+    expect(c.terms).toEqual([{ heading: "A", body: "B" }]);
+    expect(c.termsUpdatedOn).toBe(DEFAULT_SITE_CONTENT.termsUpdatedOn);
   });
 
   it("keeps an edited subheadline and the operator's own steps and FAQs", () => {

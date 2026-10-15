@@ -59,6 +59,7 @@ export default function LiliForm({
   zones,
   onSubmit,
   initialAnswers,
+  agreement,
 }: {
   steps: StepDef[];
   zones: ZonePoint[];
@@ -66,8 +67,12 @@ export default function LiliForm({
   /** Answers filled in before the person starts, e.g. the category from a
    * /subjects link (still editable like any other answer). */
   initialAnswers?: Answers;
+  /** A checkbox the person must tick before "Send" works, e.g. agreeing to
+   * the Terms & Conditions on the tutor form (2026-10-15). */
+  agreement?: React.ReactNode;
 }) {
   const [answers, setAnswers] = useState<Answers>(initialAnswers ?? {});
+  const [agreed, setAgreed] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
@@ -191,9 +196,27 @@ export default function LiliForm({
               </>
             ) : (
               !finished && (
-                <button type="button" className={primaryClass} onClick={submit} disabled={sending}>
-                  {sending ? "Sending…" : "Send ✓"}
-                </button>
+                <div className="flex flex-col items-start gap-4">
+                  {agreement && (
+                    <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700 ring-1 ring-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={agreed}
+                        onChange={(e) => setAgreed(e.target.checked)}
+                        className="mt-0.5 h-5 w-5 shrink-0 accent-rose-600"
+                      />
+                      <span>{agreement}</span>
+                    </label>
+                  )}
+                  <button
+                    type="button"
+                    className={primaryClass}
+                    onClick={submit}
+                    disabled={sending || (Boolean(agreement) && !agreed)}
+                  >
+                    {sending ? "Sending…" : "Send ✓"}
+                  </button>
+                </div>
               )
             )}
           </div>

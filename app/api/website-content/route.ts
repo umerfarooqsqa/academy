@@ -15,6 +15,13 @@ export async function POST(req: Request) {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return NextResponse.json({ error: "Invalid content" }, { status: 400 });
   }
-  await saveSiteContent(normalizeSiteContent(body));
-  return NextResponse.json({ ok: true });
+  const next = normalizeSiteContent(body);
+  // /terms shows "Last updated" — stamp today's date whenever the terms change (2026-10-15).
+  const previous = await getSiteContent();
+  next.termsUpdatedOn =
+    JSON.stringify(previous.terms) === JSON.stringify(next.terms)
+      ? previous.termsUpdatedOn
+      : new Date().toISOString().slice(0, 10);
+  await saveSiteContent(next);
+  return NextResponse.json({ ok: true, termsUpdatedOn: next.termsUpdatedOn });
 }

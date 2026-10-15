@@ -99,7 +99,7 @@ export default async function PublicLayout({ children }: { children: React.React
               Find a tutor
             </Link>
           </div>
-          <MobileNav links={nav} />
+          <MobileNav links={nav} siteName={content.siteName} whatsapp={whatsapp} />
         </div>
       </header>
 
@@ -179,9 +179,14 @@ export default async function PublicLayout({ children }: { children: React.React
             <p>
               © {year} {content.siteName}. A registered company — part of Suntex Services.
             </p>
-            <Link href="/privacy" className="hover:text-slate-300">
-              Privacy Policy
-            </Link>
+            <div className="flex gap-5">
+              <Link href="/terms" className="hover:text-slate-300">
+                Terms &amp; Conditions
+              </Link>
+              <Link href="/privacy" className="hover:text-slate-300">
+                Privacy Policy
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

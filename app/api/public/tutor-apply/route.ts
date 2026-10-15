@@ -55,6 +55,11 @@ export async function POST(req: Request) {
   if (!whatsappId) {
     return NextResponse.json({ error: "A WhatsApp/contact number is required" }, { status: 400 });
   }
+  // Tutors must agree to the Terms & Conditions to register (2026-10-15);
+  // when they agreed is recorded on Tutor.termsAcceptedAt below.
+  if (form.get("acceptedTerms") !== "yes") {
+    return NextResponse.json({ error: "Please agree to the Terms & Conditions to register." }, { status: 400 });
+  }
 
   const subjectsRaw = form.get("subjects") as string | null;
   const availabilityRaw = form.getAll("availability") as string[];
@@ -124,7 +129,7 @@ export async function POST(req: Request) {
 
   await prisma.tutor.update({
     where: { whatsappId },
-    data: { status, internalNote: notes.filter(Boolean).join("; ") || null },
+    data: { status, internalNote: notes.filter(Boolean).join("; ") || null, termsAcceptedAt: new Date() },
   });
 
   return NextResponse.json({

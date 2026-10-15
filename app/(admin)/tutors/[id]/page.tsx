@@ -14,7 +14,12 @@ export default async function TutorDetailPage({ params }: { params: Promise<{ id
   return (
     <main>
       <h1 className={pageTitle}>{tutor.name || "(unnamed tutor)"}</h1>
-      <p className="mt-1 text-sm text-gray-500">{tutor.whatsappId}</p>
+      <p className="mt-1 text-sm text-gray-500">
+        {tutor.whatsappId}
+        {tutor.termsAcceptedAt && (
+          <span className="ml-2">· agreed to the Terms &amp; Conditions on {tutor.termsAcceptedAt.toISOString().slice(0, 10)}</span>
+        )}
+      </p>
       <div className="mt-4">
         <TutorDetailClient
           tutor={{ ...tutor, tier: computeLiveTier(tutor.subscriptions) }}

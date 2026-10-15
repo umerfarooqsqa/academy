@@ -8,7 +8,7 @@ import { useState } from "react";
 import { card, input, label, btnPrimary, btnSecondary } from "@/app/components/ui";
 import type { Faq, HowItWorksStep, SiteContent } from "@/lib/siteContent";
 
-type ListKey = "howItWorksSteps" | "faqs" | "testimonials";
+type ListKey = "howItWorksSteps" | "faqs" | "testimonials" | "terms";
 
 function Field({
   title,
@@ -59,11 +59,14 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
   async function save() {
     setBusy(true);
     setSaved(false);
-    await fetch("/api/website-content", {
+    const res = await fetch("/api/website-content", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(content),
     });
+    const data = await res.json().catch(() => ({}));
+    // The server stamps the terms' "Last updated" date when they change.
+    if (typeof data.termsUpdatedOn === "string") setContent((c) => ({ ...c, termsUpdatedOn: data.termsUpdatedOn }));
     setBusy(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -199,6 +202,27 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
         ))}
         <button className={btnSecondary} onClick={() => addItem("faqs", { q: "", a: "", audience: "parent" })} type="button">
           Add question
+        </button>
+      </Group>
+
+      <Group title="Terms & Conditions (/terms — tutors must agree to these to register)">
+        <p className="-mt-2 text-xs text-gray-500">
+          Last updated {content.termsUpdatedOn} — this date updates by itself when you save changes here. Leave a blank line
+          between paragraphs; start a line with &quot;- &quot; for a bullet point.{" "}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            View page ↗
+          </a>
+        </p>
+        {content.terms.map((s, i) => (
+          <div key={i} className="flex flex-col gap-1.5 rounded border border-gray-200 p-3">
+            <span className="text-xs font-semibold text-gray-500">Section {i + 1}</span>
+            <input className={input} placeholder="Heading" value={s.heading} onChange={(e) => updateItem("terms", i, { heading: e.target.value })} />
+            <textarea className={`${input} min-h-28`} placeholder="Text" value={s.body} onChange={(e) => updateItem("terms", i, { body: e.target.value })} />
+            {rowButtons("terms", i)}
+          </div>
+        ))}
+        <button className={btnSecondary} onClick={() => addItem("terms", { heading: "", body: "" })} type="button">
+          Add section
         </button>
       </Group>
 

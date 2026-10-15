@@ -25,6 +25,7 @@ const PUBLIC_PATHS = [
   "/subjects", // 2026-10-15 professional redesign — public site pages
   "/faq",
   "/contact",
+  "/terms", // Terms & Conditions — content edited in /website-content
   "/our-tutors", // featured tutors list + /our-tutors/[id] profiles
   "/lili", // mascot images (public/lili/) shown in the public site's navbar
   "/brand", // logo files (public/brand/, 2026-10-15)

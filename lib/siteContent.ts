@@ -12,6 +12,9 @@
 // primary to university.
 
 import { prisma } from "@/lib/db";
+import { DEFAULT_TERMS, type TermsSection } from "@/lib/defaultTerms";
+
+export type { TermsSection };
 
 const STATE_KEY = "site_content";
 
@@ -52,6 +55,11 @@ export interface SiteContent {
   googlePlaceId: string;
   /** Facebook Page link shown in the public footer (2026-10-15). Empty = hidden. */
   facebookUrl: string;
+  /** /terms — Terms & Conditions sections (2026-10-15). Body format: lib/legalText.ts. */
+  terms: TermsSection[];
+  /** YYYY-MM-DD shown as "Last updated" on /terms — stamped automatically
+   * whenever the terms are saved with changes (app/api/website-content). */
+  termsUpdatedOn: string;
 }
 
 // Copy keeps the real substance of CLAUDE.md Section 11's brand positioning
@@ -159,6 +167,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   footerTagline: "Verified home and online tutors from your own neighbourhood.",
   googlePlaceId: "",
   facebookUrl: "https://www.facebook.com/Lilitutoracademy/",
+  terms: DEFAULT_TERMS,
+  termsUpdatedOn: "2026-10-15",
 };
 
 // Values that were the defaults before the 2026-10-15 redesign: a saved copy
@@ -181,6 +191,13 @@ export function normalizeSiteContent(parsed: Record<string, unknown>): SiteConte
   if (!Array.isArray(merged.howItWorksSteps)) merged.howItWorksSteps = DEFAULT_SITE_CONTENT.howItWorksSteps;
   if (!Array.isArray(merged.faqs)) merged.faqs = DEFAULT_SITE_CONTENT.faqs;
   if (!Array.isArray(merged.testimonials)) merged.testimonials = [];
+  if (!Array.isArray(merged.terms)) merged.terms = DEFAULT_TERMS;
+  merged.terms = merged.terms
+    .filter((s) => s && typeof s === "object")
+    .map((s) => ({ heading: String(s.heading ?? ""), body: String(s.body ?? "") }));
+  if (typeof merged.termsUpdatedOn !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(merged.termsUpdatedOn)) {
+    merged.termsUpdatedOn = DEFAULT_SITE_CONTENT.termsUpdatedOn;
+  }
   return merged;
 }
 
