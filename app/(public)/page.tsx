@@ -18,6 +18,7 @@ import { getVerifiedTutorCounts } from "@/lib/tutors/verified";
 import { getFeaturedTutors } from "@/lib/tutors/publicProfile";
 import { getPublicStats } from "@/lib/publicStats";
 import { PUBLIC_SUBJECTS } from "@/lib/publicSubjects";
+import Reveal from "./Reveal";
 import NearYouSection from "./NearYouSection";
 import GoogleReviewsSection from "./GoogleReviewsSection";
 import Lili from "./Lili";
@@ -172,8 +173,11 @@ export default async function HomePage() {
           intro="From primary school to university — home tuition and online classes with tutors who are strong in exactly the subjects you need."
         />
         <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {PUBLIC_SUBJECTS.map((s) => (
-            <SubjectCard key={s.key} subject={s} />
+          {/* Cards slide in one after another as they scroll into view (2026-10-15). */}
+          {PUBLIC_SUBJECTS.map((s, i) => (
+            <Reveal key={s.key} delay={(i % 3) * 120} className="flex [&>*]:w-full">
+              <SubjectCard subject={s} />
+            </Reveal>
           ))}
         </div>
         <p className="mt-10 text-center">

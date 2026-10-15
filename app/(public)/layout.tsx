@@ -81,6 +81,9 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <div className={`${headingFont.variable} ${bodyFont.variable} flex min-h-screen flex-col bg-white font-body text-slate-900`}>
+      {/* Marks that JavaScript runs, before anything paints — the scroll-reveal
+          CSS (app/globals.css) only hides content when it can reveal it again. */}
+      <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur">
         <div className={`${container} relative flex h-16 items-center justify-between gap-6 sm:h-[72px]`}>
           <Logo siteName={content.siteName} />

@@ -10,7 +10,9 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the public layout adds a "js" class to <html>
+    // before hydration, for the scroll-reveal CSS (app/globals.css).
+    <html lang="en" suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

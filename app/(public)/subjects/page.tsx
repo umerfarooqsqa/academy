@@ -3,6 +3,7 @@
 
 import type { Metadata } from "next";
 import { PUBLIC_SUBJECTS } from "@/lib/publicSubjects";
+import Reveal from "../Reveal";
 import { CtaBand, PageHeader, SectionHeading, SubjectCard } from "../sections";
 import { HomeIcon, MonitorIcon, UsersIcon } from "../icons";
 import { card, container, sectionY } from "../ui";
@@ -33,8 +34,11 @@ export default function SubjectsPage() {
       />
       <section className={`${container} ${sectionY}`}>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {PUBLIC_SUBJECTS.map((s) => (
-            <SubjectCard key={s.key} subject={s} detailed />
+          {/* Cards slide in one after another as they scroll into view (2026-10-15). */}
+          {PUBLIC_SUBJECTS.map((s, i) => (
+            <Reveal key={s.key} delay={(i % 3) * 120} className="flex [&>*]:w-full">
+              <SubjectCard subject={s} detailed />
+            </Reveal>
           ))}
         </div>
         <p className="mt-8 text-center text-sm text-slate-500">

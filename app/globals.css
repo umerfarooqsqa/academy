@@ -9,3 +9,27 @@
 body {
   @apply bg-gray-50 text-gray-900;
 }
+
+/* Scroll-reveal for the public site (app/(public)/Reveal.tsx, 2026-10-15):
+   slide up + fade in when scrolled into view. Hidden only when JavaScript is
+   running (the "js" class is set by a tiny inline script in the public
+   layout), so the content is never stuck invisible. */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.js .reveal.is-shown {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
