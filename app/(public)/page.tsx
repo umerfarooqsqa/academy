@@ -98,6 +98,18 @@ export default async function HomePage() {
                 Become a tutor
               </Link>
             </div>
+            {/* WhatsApp link (2026-10-15) — the business number from /website-content. */}
+            {whatsapp && (
+              <a
+                href={`https://wa.me/${whatsapp}?text=${encodeURIComponent("Hi! I'm looking for a tutor.")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+              >
+                <WhatsAppIcon className="h-5 w-5 fill-current" />
+                Or chat with us on WhatsApp: {content.whatsappNumber}
+              </a>
+            )}
             <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 text-left text-sm font-medium text-slate-700 sm:flex sm:flex-wrap sm:justify-center lg:justify-start">
               {TRUST.map((t) => (
                 <li key={t} className="flex items-center gap-2">
