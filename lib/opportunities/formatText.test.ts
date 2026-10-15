@@ -53,25 +53,40 @@ describe("opportunity text formatting (CLAUDE.md 6.5, reused by digest + copy bu
     expect(formatOpportunityCopyText({ ...listing, deliveryMode: "online" })).toContain("— Online");
   });
 
-  it("Facebook post lists every new tuition in one post, with the page link", () => {
+  it("Facebook post for one tuition: tidy title, details, links, hashtags", () => {
     const post = formatTuitionsPost(
-      [listing, { ...listing, opportunityCode: "OPP-5678", area: "Gulshan-e-Iqbal", subjects: ["Computer Science"], curriculum: "A-levels" }],
-      "https://example.com/opportunities",
+      [{ ...listing, subjects: ["urdu"], curriculum: "class 5", area: "Nazimabad", availability: ["weekday_evening"], opportunityCode: "OPP-1246" }],
+      "https://example.com",
     );
-    expect(post).toContain("New tuitions — tutors needed");
-    expect(post).toContain("• Biology, Chemistry (FSc Pre-Medical) — North Nazimabad");
-    expect(post).toContain("• Computer Science (A-levels) — Gulshan-e-Iqbal");
+    expect(post).toContain("📢 Tutor needed — home tuition in Karachi");
+    expect(post).toContain("📘 Urdu — Class 5");
+    expect(post).toContain("📍 Nazimabad · 🏠 Home tuition");
+    expect(post).toContain("🕒 Weekday evenings");
+    expect(post).toContain("🔖 Ref: OPP-1246");
     expect(post).toContain("https://example.com/opportunities");
+    expect(post).toContain("https://example.com/become-a-tutor");
+    expect(post).toContain("#Nazimabad");
   });
 
-  it("Facebook post says Online for online requests, uses the singular for one, and has no contact details", () => {
-    const post = formatTuitionsPost([{ ...listing, deliveryMode: "online", subjects: ["Physics"] }], "https://example.com/opportunities");
-    expect(post).toContain("New tuition — tutor needed");
-    expect(post).toContain("— Online");
+  it("Facebook post numbers several tuitions and keeps deliberate casing", () => {
+    const post = formatTuitionsPost(
+      [listing, { ...listing, opportunityCode: "OPP-5678", area: "Gulshan-e-Iqbal", subjects: ["Computer Science"], curriculum: "A-levels", deliveryMode: "online" }],
+      "https://example.com",
+    );
+    expect(post).toContain("📢 2 tutors needed — Karachi & online");
+    expect(post).toContain("1️⃣ Biology, Chemistry — FSc Pre-Medical");
+    expect(post).toContain("2️⃣ Computer Science — A-levels");
+    expect(post).toContain("💻 Online");
+    expect(post).not.toContain("#GulshaneIqbal"); // online-only requests add no area tag
+  });
+
+  it("Facebook post never contains contact details", () => {
+    const post = formatTuitionsPost([{ ...listing, deliveryMode: "both" }], "https://example.com");
+    expect(post).toContain("🏠 Home or 💻 online");
     expect(post).not.toMatch(/\d{10}|whatsapp|\+92/i);
   });
 
   it("falls back to the category when a request has no level written", () => {
-    expect(formatTuitionsPost([{ ...listing, curriculum: " " }], "u")).toContain("(Pre-Medical)");
+    expect(formatTuitionsPost([{ ...listing, curriculum: " " }], "u")).toContain("— Pre-Medical");
   });
 });

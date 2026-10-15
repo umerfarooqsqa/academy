@@ -37,6 +37,7 @@ export interface RequestRow {
   curriculum: string;
   area: string;
   deliveryMode: string;
+  availability?: string[];
   matches: { status: string; interestedTutorId: string | null }[];
 }
 
@@ -75,6 +76,7 @@ export function toListing(r: RequestRow, zones: ZoneRow[]): OpportunityListing {
     maxKm: zone?.maxKm,
     deliveryMode: r.deliveryMode,
     publishedAt: r.createdAt.toISOString(),
+    availability: r.availability ?? [],
   };
 }
 

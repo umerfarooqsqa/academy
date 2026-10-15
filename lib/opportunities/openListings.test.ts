@@ -89,6 +89,7 @@ describe("filterOpenListings", () => {
       maxKm: 8,
       deliveryMode: "in_person",
       publishedAt: daysAgo(1).toISOString(),
+      availability: [],
     });
   });
 

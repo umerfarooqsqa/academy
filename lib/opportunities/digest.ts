@@ -34,6 +34,7 @@ function fetchRequests(now: Date, extraWhere: { facebookPostedAt?: null } = {}) 
       curriculum: true,
       area: true,
       deliveryMode: true,
+      availability: true,
       matches: { select: { status: true, interestedTutorId: true } },
     },
   });
@@ -59,7 +60,7 @@ export async function postNewTuitionsToFacebook(now: Date = new Date()) {
 
   const text = formatTuitionsPost(
     fresh.map((r) => toListing(r, zones)),
-    `${PUBLIC_SITE_URL}/opportunities`,
+    PUBLIC_SITE_URL,
   );
   const result = await postToFacebookPage(text);
   if (result.ok) {
