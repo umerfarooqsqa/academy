@@ -134,6 +134,15 @@ model ParentRequest {
   // neglect digest included this request (null = never alerted) — lets the
   // 3-hour alert both fire once and repeat every 3h while still unresolved.
   neglectAlertedAt DateTime?
+  // 2026-10-15 operator decision — every non-closed request is a public
+  // opportunity right away (/opportunities + the Facebook Page), not only
+  // approved matches. opportunityCode is the public "OPP-1234" reference
+  // (assigned at intake); publicHiddenAt hides it ("Hide from public" on
+  // /parents/[id]); facebookPostedAt marks it as already posted to the Page,
+  // so the 3-hourly Facebook job posts each tuition once.
+  opportunityCode  String?   @unique
+  publicHiddenAt   DateTime?
+  facebookPostedAt DateTime?
 
   matches Match[]
 

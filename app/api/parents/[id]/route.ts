@@ -29,6 +29,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   ] as const;
   const data: Record<string, unknown> = {};
   for (const f of editable) if (f in body) data[f] = body[f];
+  // "Hide from public" — keeps the request off /opportunities and the Facebook
+  // Page (2026-10-15: every open request is public by default).
+  if (typeof body.publicHidden === "boolean") data.publicHiddenAt = body.publicHidden ? new Date() : null;
 
   const parent = await prisma.parentRequest.update({ where: { id }, data });
   return NextResponse.json({ parent });

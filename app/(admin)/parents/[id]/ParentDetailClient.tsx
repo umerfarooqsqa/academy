@@ -11,6 +11,9 @@ interface ParentDetailProps {
     status: string;
     internalNote: string | null;
     campaignId: string | null;
+    opportunityCode: string | null;
+    publicHiddenAt: Date | null;
+    facebookPostedAt: Date | null;
   };
   campaigns: Array<{ id: string; name: string }>;
   matches: Array<{ id: string; score: number; status: string; tutor: { name: string } }>;
@@ -29,6 +32,17 @@ export default function ParentDetailClient({ parent, campaigns, matches }: Paren
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ campaignId }),
+    });
+    setBusy(false);
+    router.refresh();
+  }
+
+  async function setPublicHidden(publicHidden: boolean) {
+    setBusy(true);
+    await fetch(`/api/parents/${parent.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicHidden }),
     });
     setBusy(false);
     router.refresh();
@@ -73,6 +87,27 @@ export default function ParentDetailClient({ parent, campaigns, matches }: Paren
           {busy ? "Running…" : "Run matching engine"}
         </button>
         {runResult && <p className="mt-2 text-xs text-gray-500">{runResult}</p>}
+      </div>
+
+      <div className={card}>
+        <h2 className="text-sm font-semibold text-gray-900">Public listing</h2>
+        <p className="mt-1 text-xs text-gray-500">
+          Open requests are shown on /opportunities and posted to the Facebook Page (subject, level and area only).
+        </p>
+        <p className="mt-2 text-sm text-gray-700">
+          {parent.opportunityCode ? <span className={badge("blue")}>{parent.opportunityCode}</span> : "No code yet"}{" "}
+          {parent.publicHiddenAt ? (
+            <span className={badge("amber")}>Hidden from public</span>
+          ) : parent.status === "closed" ? (
+            <span className={badge("gray")}>Not listed (closed)</span>
+          ) : (
+            <span className={badge("green")}>Listed</span>
+          )}{" "}
+          {parent.facebookPostedAt && <span className={badge("gray")}>Posted to Facebook</span>}
+        </p>
+        <button className={`${btnSecondary} mt-3`} disabled={busy} onClick={() => setPublicHidden(!parent.publicHiddenAt)}>
+          {parent.publicHiddenAt ? "Show on public listings" : "Hide from public"}
+        </button>
       </div>
 
       <div className={card}>

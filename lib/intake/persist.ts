@@ -5,6 +5,7 @@ import type { TutorDraft, ParentDraft } from "@/lib/intake/helpers";
 import type { DocKind } from "@/lib/intake/documents";
 import { findNearestZone } from "@/lib/geo/nearestZone";
 import { matchZoneByName } from "@/lib/geo/zoneLookup";
+import { newOpportunityCode } from "@/lib/opportunities/requestCode";
 
 /** Case-insensitive lookup of the AreaZone a free-text area string refers to. */
 export async function resolveZone(area: string) {
@@ -133,6 +134,9 @@ export async function createParentRequest(opts: {
 
   return prisma.parentRequest.create({
     data: {
+      // Every open request is a public opportunity right away (2026-10-15) —
+      // its OPP code goes on /opportunities and the Facebook Page.
+      opportunityCode: status === "closed" ? null : await newOpportunityCode(),
       whatsappId,
       studentInfo: draft.studentInfo ?? null,
       subjects: draft.subjects ?? [],

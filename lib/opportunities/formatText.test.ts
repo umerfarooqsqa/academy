@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   formatOpportunityLine,
   formatOpportunityCopyText,
-  formatDigestText,
+  formatTuitionsPost,
   type OpportunityListing,
 } from "@/lib/opportunities/formatText";
 import { generateOpportunityCode, parseOpportunityCode } from "@/lib/opportunities/code";
@@ -53,25 +53,25 @@ describe("opportunity text formatting (CLAUDE.md 6.5, reused by digest + copy bu
     expect(formatOpportunityCopyText({ ...listing, deliveryMode: "online" })).toContain("— Online");
   });
 
-  it("digest text is one combined post, never one line per opportunity object", () => {
-    const listings = [listing, { ...listing, opportunityCode: "OPP-5678", area: "Gulshan-e-Iqbal", subjects: ["Computer Science"] }];
-    const digest = formatDigestText(listings);
-    expect(digest.split("\n")).toHaveLength(1);
-    expect(digest).toContain("North Nazimabad");
-    expect(digest).toContain("Gulshan-e-Iqbal");
-  });
-
-  it("digest includes the page link when given, says Online for online requests, and never contact details", () => {
-    const digest = formatDigestText(
-      [listing, { ...listing, opportunityCode: "OPP-5678", deliveryMode: "online", subjects: ["Physics"] }],
+  it("Facebook post lists every new tuition in one post, with the page link", () => {
+    const post = formatTuitionsPost(
+      [listing, { ...listing, opportunityCode: "OPP-5678", area: "Gulshan-e-Iqbal", subjects: ["Computer Science"], curriculum: "A-levels" }],
       "https://example.com/opportunities",
     );
-    expect(digest).toContain("https://example.com/opportunities");
-    expect(digest).toContain("Physics (Online)");
-    expect(digest).not.toMatch(/\d{10}|whatsapp|\+92/i);
+    expect(post).toContain("New tuitions — tutors needed");
+    expect(post).toContain("• Biology, Chemistry (FSc Pre-Medical) — North Nazimabad");
+    expect(post).toContain("• Computer Science (A-levels) — Gulshan-e-Iqbal");
+    expect(post).toContain("https://example.com/opportunities");
   });
 
-  it("handles zero open opportunities gracefully", () => {
-    expect(formatDigestText([])).not.toContain("undefined");
+  it("Facebook post says Online for online requests, uses the singular for one, and has no contact details", () => {
+    const post = formatTuitionsPost([{ ...listing, deliveryMode: "online", subjects: ["Physics"] }], "https://example.com/opportunities");
+    expect(post).toContain("New tuition — tutor needed");
+    expect(post).toContain("— Online");
+    expect(post).not.toMatch(/\d{10}|whatsapp|\+92/i);
+  });
+
+  it("falls back to the category when a request has no level written", () => {
+    expect(formatTuitionsPost([{ ...listing, curriculum: " " }], "u")).toContain("(Pre-Medical)");
   });
 });

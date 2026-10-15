@@ -1,7 +1,6 @@
-// Shared plain-text formatting for open opportunities (CLAUDE.md 6.5). Reused by
-// the daily Facebook Page digest (POST /api/opportunities/post-facebook-digest)
-// and the per-listing "Share" button on the public /opportunities page — one
-// formatting module, two destinations, per the spec.
+// Shared plain-text formatting for open opportunities (CLAUDE.md 6.5): the
+// Facebook Page post (POST /api/opportunities/post-facebook-digest, every 3
+// hours) and the per-listing "Share" button on the public /opportunities page.
 
 import { SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
 
@@ -52,17 +51,26 @@ export function formatOpportunityCopyText(listing: OpportunityListing, opportuni
   return `📌 ${subjects} tutor needed — ${where}\n${groupLabel(listing.subjectGroup)} · ${listing.curriculum}\n${action}`;
 }
 
-/** One post per day, not one per opportunity (6.5) — e.g.
- * "Looking for tutors this week: Biology (North Nazimabad), Computer Science (Online)..."
- * Subjects and area only — never any parent contact details. `opportunitiesUrl`
- * (absolute) is appended so readers can tap straight through. */
-export function formatDigestText(listings: OpportunityListing[], opportunitiesUrl?: string): string {
-  if (listings.length === 0) return "No open tutoring opportunities right now — check back soon!";
-  const items = listings
-    .map((l) => `${l.subjects.join("/") || "Tutor"} (${l.deliveryMode === "online" ? "Online" : l.area})`)
-    .join(", ");
-  const action = opportunitiesUrl
-    ? `Interested? Tap "I'm interested" on our Opportunities page: ${opportunitiesUrl}`
-    : `Interested? Tap "I'm interested" on our Opportunities page.`;
-  return `Looking for tutors this week: ${items}. ${action}`;
+/** The Facebook Page post for newly opened tuitions (2026-10-15: posted every
+ * 3 hours, each tuition once). Subject, level and area only — never any
+ * parent contact details. `opportunitiesUrl` (absolute) lets readers tap
+ * straight through to "I'm interested". e.g.
+ *   📚 New tuitions — tutors needed
+ *   • Chemistry (O level) — North Nazimabad
+ *   • Physics (A-levels) — Online */
+export function formatTuitionsPost(listings: OpportunityListing[], opportunitiesUrl: string): string {
+  const lines = listings.map((l) => {
+    const subjects = l.subjects.join(", ") || "Tutor";
+    const level = l.curriculum.trim() || groupLabel(l.subjectGroup);
+    const where = l.deliveryMode === "online" ? "Online" : l.area;
+    return `• ${subjects} (${level}) — ${where}`;
+  });
+  return [
+    listings.length === 1 ? "📚 New tuition — tutor needed" : "📚 New tuitions — tutors needed",
+    "",
+    ...lines,
+    "",
+    `Interested? Tap "I'm interested" here: ${opportunitiesUrl}`,
+    "Students' contact details are never shared publicly.",
+  ].join("\n");
 }

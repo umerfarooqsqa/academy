@@ -33,10 +33,10 @@ async function loadOverview() {
         match: { select: { parentRequest: { select: { area: true } } } },
       },
     }),
-    // Approved matches a tutor said "I'm interested" in (premium WhatsApp YES,
-    // or the /opportunities button, 2026-10-14) — waiting on the operator to
-    // send them to the parent.
-    prisma.match.count({ where: { status: "approved", interestedTutorId: { not: null } } }),
+    // Matches a tutor said "I'm interested" in (premium WhatsApp YES, or the
+    // /opportunities button — which since 2026-10-15 usually creates a new
+    // awaiting_approval match) — waiting on the operator.
+    prisma.match.count({ where: { status: { in: ["awaiting_approval", "approved"] }, interestedTutorId: { not: null } } }),
   ]);
 
   const paymentRows = payments.map((p) => ({
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
         <StatTile label="Active tutors" value={activeTutors} href="/tutors?status=active" />
         <StatTile label="Open parent requests" value={openParentRequests} href="/parents?status=pending" />
         <StatTile label="Calls needed" value={callsNeeded.length} />
-        <StatTile label="Tutors interested" value={tutorsInterested} href="/matches?status=approved" />
+        <StatTile label="Tutors interested" value={tutorsInterested} href="/matches" />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">

@@ -35,10 +35,10 @@
       "id": "55e9e7f55d7e4911902d698fbd0d8641"
     }
   ],
-  // Same two schedules vercel.json's `crons` array had — the daily Facebook
-  // digest, and the shared 15-minute check used by both the notification-delay
-  // and neglected-parent routes (see worker.ts's scheduled handler).
+  // The Facebook Page post (every 3 hours since 2026-10-15 — was once daily),
+  // and the shared 15-minute check used by both the notification-delay and
+  // neglected-parent routes (see worker.ts's scheduled handler).
   "triggers": {
-    "crons": ["0 15 * * *", "*/15 * * * *"]
+    "crons": ["0 */3 * * *", "*/15 * * * *"]
   }
 }

@@ -1,34 +1,37 @@
-// Which published matches count as an open opportunity, as a pure function
-// over already-fetched rows (lib/opportunities/digest.ts does the query) so
-// it's unit-testable. 2026-10-14 fix — before this, rejected/paid/closed
-// requests stayed listed forever and one parent request showed up to 3
-// times (one per candidate Match).
+// Which parent requests count as an open public opportunity, as a pure
+// function over already-fetched rows (lib/opportunities/digest.ts does the
+// query) so it's unit-testable.
 //
-// A parent request is listed once, while ALL of these hold:
-//   - its ParentRequest isn't closed
-//   - no Match of that request has a tutor's confirmed interest yet
-//   - at least one of its Matches is approved, has a code, and was published
-//     within the last OPPORTUNITY_MAX_AGE_DAYS (operator decision: 14)
-// The listing uses the first-published such Match's code.
+// 2026-10-15 operator decision: EVERY request is a public opportunity right
+// away (on /opportunities, and posted to the Facebook Page) — it no longer
+// waits for matching to find a tutor and for the operator to approve the
+// match. A request is listed while ALL of these hold:
+//   - it isn't closed (a declined Matric request is closed at intake)
+//   - the operator hasn't hidden it ("Hide from public" on /parents/[id])
+//   - it has its public OPP code
+//   - it came in within the last OPPORTUNITY_MAX_AGE_DAYS (14)
+//   - no tutor has said "I'm interested" in it yet, and no tutor has been
+//     placed with it (a match selected / demo scheduled / paid / completed)
 
 import type { OpportunityListing } from "@/lib/opportunities/formatText";
 
 export const OPPORTUNITY_MAX_AGE_DAYS = 14;
 
-export interface MatchRow {
-  parentRequestId: string;
+/** Match statuses meaning a tutor is already placed with the request. */
+export const PLACED_STATUSES = ["selected", "demo_scheduled", "paid", "completed"];
+
+export interface RequestRow {
+  id: string;
   status: string;
   opportunityCode: string | null;
-  publishedToPageAt: Date | null;
-  interestedTutorId: string | null;
-  parentRequest: {
-    status: string;
-    subjects: string[];
-    subjectGroup: string;
-    curriculum: string;
-    area: string;
-    deliveryMode: string;
-  };
+  publicHiddenAt: Date | null;
+  createdAt: Date;
+  subjects: string[];
+  subjectGroup: string;
+  curriculum: string;
+  area: string;
+  deliveryMode: string;
+  matches: { status: string; interestedTutorId: string | null }[];
 }
 
 export interface ZoneRow {
@@ -42,41 +45,36 @@ export function openListingCutoff(now: Date): Date {
   return new Date(now.getTime() - OPPORTUNITY_MAX_AGE_DAYS * 24 * 60 * 60 * 1000);
 }
 
-/** `matches` must include every Match of each parent request involved (not
- * just the published ones), so a sibling's confirmed interest is seen. */
-export function filterOpenListings(matches: MatchRow[], zones: ZoneRow[], now: Date = new Date()): OpportunityListing[] {
-  const cutoff = openListingCutoff(now);
-  const zoneByName = new Map(zones.map((z) => [z.name.toLowerCase(), z]));
+export function isOpenRequest(r: RequestRow, now: Date = new Date()): boolean {
+  return (
+    r.status !== "closed" &&
+    !r.publicHiddenAt &&
+    !!r.opportunityCode &&
+    r.createdAt >= openListingCutoff(now) &&
+    !r.matches.some((m) => m.interestedTutorId || PLACED_STATUSES.includes(m.status))
+  );
+}
 
-  const byRequest = new Map<string, MatchRow[]>();
-  for (const m of matches) byRequest.set(m.parentRequestId, [...(byRequest.get(m.parentRequestId) ?? []), m]);
+/** Public fields only — never the parent's number, name, budget, notes or own coordinates. */
+export function toListing(r: RequestRow, zones: ZoneRow[]): OpportunityListing {
+  const zone = zones.find((z) => z.name.toLowerCase() === r.area.toLowerCase());
+  return {
+    opportunityCode: r.opportunityCode!,
+    subjects: r.subjects,
+    subjectGroup: r.subjectGroup,
+    curriculum: r.curriculum,
+    area: r.area,
+    latitude: zone?.latitude,
+    longitude: zone?.longitude,
+    maxKm: zone?.maxKm,
+    deliveryMode: r.deliveryMode,
+    publishedAt: r.createdAt.toISOString(),
+  };
+}
 
-  const listings: OpportunityListing[] = [];
-  for (const group of byRequest.values()) {
-    if (group.some((m) => m.interestedTutorId)) continue;
-    const pr = group[0].parentRequest;
-    if (pr.status === "closed") continue;
-
-    const live = group
-      .filter((m) => m.status === "approved" && m.opportunityCode && m.publishedToPageAt && m.publishedToPageAt >= cutoff)
-      .sort((a, b) => a.publishedToPageAt!.getTime() - b.publishedToPageAt!.getTime());
-    const first = live[0];
-    if (!first) continue;
-
-    const zone = zoneByName.get(pr.area.toLowerCase());
-    listings.push({
-      opportunityCode: first.opportunityCode!,
-      subjects: pr.subjects,
-      subjectGroup: pr.subjectGroup,
-      curriculum: pr.curriculum,
-      area: pr.area,
-      latitude: zone?.latitude,
-      longitude: zone?.longitude,
-      maxKm: zone?.maxKm,
-      deliveryMode: pr.deliveryMode,
-      publishedAt: first.publishedToPageAt!.toISOString(),
-    });
-  }
-
-  return listings.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+export function filterOpenListings(rows: RequestRow[], zones: ZoneRow[], now: Date = new Date()): OpportunityListing[] {
+  return rows
+    .filter((r) => isOpenRequest(r, now))
+    .map((r) => toListing(r, zones))
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }

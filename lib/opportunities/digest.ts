@@ -1,57 +1,69 @@
-// Daily Facebook Page digest (CLAUDE.md 6.5, 8: POST /api/opportunities/post-facebook-digest).
-// One post per day, not one per opportunity. Guards against duplicate posts via
-// SystemState["last_facebook_digest_posted_at"] (6.9's generic singleton table).
+// Public opportunities (/opportunities, GET /api/opportunities, the homepage)
+// and the Facebook Page posts (CLAUDE.md 6.5, 8: POST
+// /api/opportunities/post-facebook-digest).
+//
+// 2026-10-15 operator decision: every open parent request is listed (rules in
+// lib/opportunities/openListings.ts), and every 3 hours any open tuition not
+// yet posted to the Page is posted — together in one post, each tuition once
+// (ParentRequest.facebookPostedAt). Nothing new → no post.
 
 import { prisma } from "@/lib/db";
 import { postToFacebookPage } from "@/lib/facebook/client";
-import { formatDigestText, type OpportunityListing } from "@/lib/opportunities/formatText";
-import { filterOpenListings, openListingCutoff } from "@/lib/opportunities/openListings";
+import { formatTuitionsPost, type OpportunityListing } from "@/lib/opportunities/formatText";
+import { filterOpenListings, isOpenRequest, openListingCutoff, toListing } from "@/lib/opportunities/openListings";
+import { assignMissingOpportunityCodes } from "@/lib/opportunities/requestCode";
 import { PUBLIC_SITE_URL } from "@/lib/site";
 
-const STATE_KEY = "last_facebook_digest_posted_at";
-
-function isSameUtcDay(a: Date, b: Date): boolean {
-  return a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
+function fetchRequests(now: Date, extraWhere: { facebookPostedAt?: null } = {}) {
+  return prisma.parentRequest.findMany({
+    where: {
+      status: { not: "closed" },
+      publicHiddenAt: null,
+      opportunityCode: { not: null },
+      createdAt: { gte: openListingCutoff(now) },
+      ...extraWhere,
+    },
+    select: {
+      id: true,
+      status: true,
+      opportunityCode: true,
+      publicHiddenAt: true,
+      createdAt: true,
+      subjects: true,
+      subjectGroup: true,
+      curriculum: true,
+      area: true,
+      deliveryMode: true,
+      matches: { select: { status: true, interestedTutorId: true } },
+    },
+  });
 }
 
-/** Open opportunities for /opportunities, GET /api/opportunities and the
- * daily Facebook digest. The open/expiry/one-per-request rules live in
- * lib/opportunities/openListings.ts; this only fetches the rows — every Match
- * of each parent request with a recently published one, so a sibling's
- * confirmed interest hides the listing. */
 export async function getOpenOpportunityListings(now: Date = new Date()): Promise<OpportunityListing[]> {
-  const [matches, zones] = await Promise.all([
-    prisma.match.findMany({
-      where: { parentRequest: { matches: { some: { publishedToPageAt: { gte: openListingCutoff(now) } } } } },
-      include: { parentRequest: true },
-    }),
-    // Same AreaZone data the admin manages via /zones and /heatmap — zone
-    // centroids only, never the parent's own coordinate.
+  const [rows, zones] = await Promise.all([
+    fetchRequests(now),
+    // Same AreaZone data the admin manages via /zones — zone centroids only,
+    // never the parent's own coordinate.
     prisma.areaZone.findMany(),
   ]);
-  return filterOpenListings(matches, zones, now);
+  return filterOpenListings(rows, zones, now);
 }
 
-export async function postDailyFacebookDigest(now: Date = new Date()) {
-  const state = await prisma.systemState.findUnique({ where: { key: STATE_KEY } });
-  if (state && isSameUtcDay(new Date(state.value), now)) {
-    return { posted: false, reason: "Already posted today" };
-  }
+/** Posts every open tuition that hasn't been posted to the Facebook Page yet,
+ * in one post. Called every 3 hours by the scheduled job. */
+export async function postNewTuitionsToFacebook(now: Date = new Date()) {
+  await assignMissingOpportunityCodes();
+  const [rows, zones] = await Promise.all([fetchRequests(now, { facebookPostedAt: null }), prisma.areaZone.findMany()]);
+  const fresh = rows.filter((r) => isOpenRequest(r, now)).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  if (fresh.length === 0) return { posted: false, reason: "No new tuitions", count: 0 };
 
-  const listings = await getOpenOpportunityListings();
-  // Nothing open → no post at all, rather than a daily "nothing right now"
-  // that clutters the Page (2026-10-15).
-  if (listings.length === 0) return { posted: false, reason: "No open tuitions", listingCount: 0 };
-  const text = formatDigestText(listings, `${PUBLIC_SITE_URL}/opportunities`);
+  const text = formatTuitionsPost(
+    fresh.map((r) => toListing(r, zones)),
+    `${PUBLIC_SITE_URL}/opportunities`,
+  );
   const result = await postToFacebookPage(text);
-
   if (result.ok) {
-    await prisma.systemState.upsert({
-      where: { key: STATE_KEY },
-      create: { key: STATE_KEY, value: now.toISOString() },
-      update: { value: now.toISOString() },
-    });
+    await prisma.parentRequest.updateMany({ where: { id: { in: fresh.map((r) => r.id) } }, data: { facebookPostedAt: now } });
   }
-
-  return { posted: result.ok, error: result.error, listingCount: listings.length };
+  return { posted: result.ok, error: result.error, postId: result.postId, count: fresh.length };
 }

@@ -1,64 +1,84 @@
 import { describe, expect, it } from "vitest";
-import { filterOpenListings, OPPORTUNITY_MAX_AGE_DAYS, type MatchRow } from "./openListings";
+import { filterOpenListings, isOpenRequest, OPPORTUNITY_MAX_AGE_DAYS, type RequestRow } from "./openListings";
 
-const now = new Date("2026-10-14T12:00:00Z");
+const now = new Date("2026-10-15T12:00:00Z");
 const daysAgo = (d: number) => new Date(now.getTime() - d * 86_400_000);
 const zones = [{ name: "Malir", latitude: 24.89, longitude: 67.2, maxKm: 8 }];
 
-function match(over: Partial<MatchRow> & { parentRequestId: string }): MatchRow {
+function req(over: Partial<RequestRow> = {}): RequestRow {
   return {
-    status: "approved",
-    opportunityCode: `OPP-${Math.floor(Math.random() * 9000) + 1000}`,
-    publishedToPageAt: daysAgo(1),
-    interestedTutorId: null,
-    parentRequest: { status: "matched", subjects: ["Biology"], subjectGroup: "pre_medical", curriculum: "FSc", area: "Malir", deliveryMode: "in_person" },
+    id: "p1",
+    status: "pending",
+    opportunityCode: "OPP-1234",
+    publicHiddenAt: null,
+    createdAt: daysAgo(1),
+    subjects: ["Biology"],
+    subjectGroup: "pre_medical",
+    curriculum: "FSc",
+    area: "Malir",
+    deliveryMode: "in_person",
+    matches: [],
     ...over,
   };
 }
 
+describe("isOpenRequest (2026-10-15: every open request is public)", () => {
+  it("lists a fresh request even with no matches at all", () => {
+    expect(isOpenRequest(req(), now)).toBe(true);
+  });
+
+  it("still lists a request whose matches are only proposed, approved or rejected", () => {
+    const matches = [
+      { status: "awaiting_approval", interestedTutorId: null },
+      { status: "approved", interestedTutorId: null },
+      { status: "rejected", interestedTutorId: null },
+    ];
+    expect(isOpenRequest(req({ matches }), now)).toBe(true);
+  });
+
+  it("hides closed, hidden and code-less requests", () => {
+    expect(isOpenRequest(req({ status: "closed" }), now)).toBe(false);
+    expect(isOpenRequest(req({ publicHiddenAt: daysAgo(0) }), now)).toBe(false);
+    expect(isOpenRequest(req({ opportunityCode: null }), now)).toBe(false);
+  });
+
+  it(`drops requests older than ${OPPORTUNITY_MAX_AGE_DAYS} days`, () => {
+    expect(isOpenRequest(req({ createdAt: daysAgo(15) }), now)).toBe(false);
+    expect(isOpenRequest(req({ createdAt: daysAgo(13) }), now)).toBe(true);
+  });
+
+  it("hides a request once a tutor said I'm interested or was placed", () => {
+    expect(isOpenRequest(req({ matches: [{ status: "awaiting_approval", interestedTutorId: "t1" }] }), now)).toBe(false);
+    for (const status of ["selected", "demo_scheduled", "paid", "completed"]) {
+      expect(isOpenRequest(req({ matches: [{ status, interestedTutorId: null }] }), now)).toBe(false);
+    }
+  });
+});
+
 describe("filterOpenListings", () => {
-  it("lists one entry per parent request, using the first-published code", () => {
+  it("returns public fields only, with zone centroid and the request date, newest first", () => {
     const listings = filterOpenListings(
-      [
-        match({ parentRequestId: "p1", opportunityCode: "OPP-2222", publishedToPageAt: daysAgo(1) }),
-        match({ parentRequestId: "p1", opportunityCode: "OPP-1111", publishedToPageAt: daysAgo(2) }),
-        match({ parentRequestId: "p1", opportunityCode: null, publishedToPageAt: null, status: "awaiting_approval" }),
-      ],
+      [req({ id: "a", opportunityCode: "OPP-1111", createdAt: daysAgo(3) }), req({ id: "b", opportunityCode: "OPP-2222", createdAt: daysAgo(1) })],
       zones,
       now,
     );
-    expect(listings).toHaveLength(1);
-    expect(listings[0].opportunityCode).toBe("OPP-1111");
-    expect(listings[0]).toMatchObject({ area: "Malir", latitude: 24.89, maxKm: 8, deliveryMode: "in_person" });
+    expect(listings.map((l) => l.opportunityCode)).toEqual(["OPP-2222", "OPP-1111"]);
+    expect(listings[0]).toEqual({
+      opportunityCode: "OPP-2222",
+      subjects: ["Biology"],
+      subjectGroup: "pre_medical",
+      curriculum: "FSc",
+      area: "Malir",
+      latitude: 24.89,
+      longitude: 67.2,
+      maxKm: 8,
+      deliveryMode: "in_person",
+      publishedAt: daysAgo(1).toISOString(),
+    });
   });
 
-  it("hides the whole request once any of its matches has an interested tutor", () => {
-    const listings = filterOpenListings(
-      [match({ parentRequestId: "p1" }), match({ parentRequestId: "p1", interestedTutorId: "t1", publishedToPageAt: null })],
-      zones,
-      now,
-    );
-    expect(listings).toEqual([]);
-  });
-
-  it(`drops listings published more than ${OPPORTUNITY_MAX_AGE_DAYS} days ago`, () => {
-    expect(filterOpenListings([match({ parentRequestId: "p1", publishedToPageAt: daysAgo(15) })], zones, now)).toEqual([]);
-    expect(filterOpenListings([match({ parentRequestId: "p1", publishedToPageAt: daysAgo(13) })], zones, now)).toHaveLength(1);
-  });
-
-  it("drops non-approved matches and closed requests", () => {
-    expect(filterOpenListings([match({ parentRequestId: "p1", status: "rejected" })], zones, now)).toEqual([]);
-    expect(filterOpenListings([match({ parentRequestId: "p1", status: "paid" })], zones, now)).toEqual([]);
-    const closed = match({ parentRequestId: "p1" });
-    closed.parentRequest = { ...closed.parentRequest, status: "closed" };
-    expect(filterOpenListings([closed], zones, now)).toEqual([]);
-  });
-
-  it("sorts newest first and leaves coordinates undefined for an unknown area", () => {
-    const odd = match({ parentRequestId: "p2", publishedToPageAt: daysAgo(0.5) });
-    odd.parentRequest = { ...odd.parentRequest, area: "Block 7, near Hassan Square" };
-    const listings = filterOpenListings([match({ parentRequestId: "p1", publishedToPageAt: daysAgo(3) }), odd], zones, now);
-    expect(listings.map((l) => l.area)).toEqual(["Block 7, near Hassan Square", "Malir"]);
-    expect(listings[0].latitude).toBeUndefined();
+  it("leaves coordinates undefined for an area that isn't a zone", () => {
+    const [l] = filterOpenListings([req({ area: "near Hassan Square" })], zones, now);
+    expect(l.latitude).toBeUndefined();
   });
 });

@@ -22,7 +22,8 @@ interface MinimalExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
 }
 
-const FACEBOOK_DIGEST_CRON = "0 15 * * *";
+// Every 3 hours (2026-10-15): post any tuitions not yet on the Facebook Page.
+const FACEBOOK_DIGEST_CRON = "0 */3 * * *";
 const CHECK_CRON_ROUTES = ["/api/matches/check-notification-delay", "/api/parents/check-neglected"];
 
 export default {
