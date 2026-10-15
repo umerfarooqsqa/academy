@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { runMatchingEngine, type TutorCandidate, type ParentRequestInput, type AreaZoneInput } from "@/lib/matching/engine";
+import { checkRequestedTutor, runMatchingEngine, type TutorCandidate, type ParentRequestInput, type AreaZoneInput } from "@/lib/matching/engine";
 
 const zones: AreaZoneInput[] = [
   { name: "North Nazimabad", latitude: 24.9342, longitude: 67.0392, maxKm: 10 },
@@ -227,5 +227,61 @@ describe("runMatchingEngine — Step 5 top-N", () => {
     expect(result).toHaveLength(3);
     const scores = result.map((r) => r.score);
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
+  });
+});
+
+describe("tutor gender preference (2026-10-15 — strict, unknowns allowed)", () => {
+  it("never proposes a tutor of the other recorded gender", () => {
+    const result = runMatchingEngine(parent({ tutorGenderPreference: "female" }), [tutor({ gender: "male" })], zones);
+    expect(result).toHaveLength(0);
+  });
+
+  it("proposes a tutor of the requested gender with no gender note", () => {
+    const [r] = runMatchingEngine(parent({ tutorGenderPreference: "female" }), [tutor({ gender: "female" })], zones);
+    expect(r.tutorId).toBe("t1");
+    expect(r.internalNote ?? "").not.toMatch(/gender/);
+  });
+
+  it("lets a tutor with no gender recorded through, with a note to check", () => {
+    const [r] = runMatchingEngine(parent({ tutorGenderPreference: "female", budget: null }), [tutor({ gender: null })], zones);
+    expect(r.internalNote).toBe("budget not provided — confirm with parent; tutor gender not recorded — parent asked for female");
+  });
+
+  it("ignores gender when the parent has no preference", () => {
+    expect(runMatchingEngine(parent({ tutorGenderPreference: "any" }), [tutor({ gender: "male" })], zones)).toHaveLength(1);
+    expect(runMatchingEngine(parent({}), [tutor({ gender: "male" })], zones)).toHaveLength(1);
+  });
+});
+
+describe("school category (2026-10-15)", () => {
+  it("matches school only with school", () => {
+    const p = parent({ subjectGroup: "school", subjects: ["Maths"] });
+    expect(runMatchingEngine(p, [tutor({ subjectGroup: "school", subjects: ["Maths"] })], zones)).toHaveLength(1);
+    expect(runMatchingEngine(p, [tutor({ subjectGroup: "other", subjects: ["Maths"] })], zones)).toHaveLength(0);
+  });
+});
+
+describe("checkRequestedTutor — 'Request this tutor' keeps the hard rules", () => {
+  it("accepts a same-zone or within-radius tutor", () => {
+    expect(checkRequestedTutor(tutor({}), parent({}), zones).eligible).toBe(true);
+    expect(checkRequestedTutor(tutor({ area: "Gulshan-e-Iqbal" }), parent({}), zones).eligible).toBe(true);
+  });
+
+  it("rejects a tutor across town even though the parent picked them (Section 1)", () => {
+    const r = checkRequestedTutor(tutor({ area: "Malir" }), parent({}), zones);
+    expect(r).toEqual({ eligible: false, reason: "outside the parent's area" });
+  });
+
+  it("allows any area for an online request", () => {
+    expect(checkRequestedTutor(tutor({ area: "Malir" }), parent({ deliveryMode: "online" }), zones).eligible).toBe(true);
+  });
+
+  it("rejects on category, subject and gender", () => {
+    expect(checkRequestedTutor(tutor({ subjectGroup: "computer" }), parent({}), zones)).toMatchObject({ eligible: false });
+    expect(checkRequestedTutor(tutor({ subjects: ["Physics"] }), parent({}), zones)).toMatchObject({ eligible: false });
+    expect(checkRequestedTutor(tutor({ gender: "male" }), parent({ tutorGenderPreference: "female" }), zones)).toMatchObject({
+      eligible: false,
+      reason: "gender preference",
+    });
   });
 });

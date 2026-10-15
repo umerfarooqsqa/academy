@@ -1,5 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { displayName, parseEducation, parseExperience, toPublicProfile } from "./publicProfile";
+import { displayName, parseEducation, parseExperience, parsePublicProfilePatch, toPublicProfile } from "./publicProfile";
+
+describe("parsePublicProfilePatch", () => {
+  it("only returns keys that were sent, tidied and capped", () => {
+    const r = parsePublicProfilePatch({ profileHeadline: "  " + "x".repeat(200), profileBio: "   " });
+    expect(r).toEqual({ data: { profileHeadline: "x".repeat(120), profileBio: null } });
+  });
+
+  it("validates flags and years", () => {
+    expect(parsePublicProfilePatch({ featured: "yes" })).toHaveProperty("error");
+    expect(parsePublicProfilePatch({ yearsExperience: 99 })).toHaveProperty("error");
+    expect(parsePublicProfilePatch({ yearsExperience: "" })).toEqual({ data: { yearsExperience: null } });
+    const r = parsePublicProfilePatch({ featured: true, gradesVerified: false, yearsExperience: "4" });
+    expect(r).toEqual({ data: { featured: true, gradesVerifiedAt: null, yearsExperience: 4 } });
+  });
+
+  it("caps experience/education lists at 10 and drops empty rows", () => {
+    const many = Array.from({ length: 15 }, (_, i) => ({ title: `T${i}`, place: "", period: "", description: "" }));
+    const r = parsePublicProfilePatch({ profileExperience: [...many, {}], profileEducation: [{ degree: "MBBS" }, { degree: "" }] });
+    expect("data" in r && (r.data.profileExperience as unknown[]).length).toBe(10);
+    expect("data" in r && r.data.profileEducation).toEqual([{ degree: "MBBS", institution: "", year: "" }]);
+  });
+});
 
 describe("displayName", () => {
   it("shows first name + last initial", () => {

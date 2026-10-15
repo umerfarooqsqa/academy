@@ -58,12 +58,16 @@ export default function LiliForm({
   steps: defs,
   zones,
   onSubmit,
+  initialAnswers,
 }: {
   steps: StepDef[];
   zones: ZonePoint[];
   onSubmit: (answers: Answers) => Promise<SubmitResult>;
+  /** Answers filled in before the person starts, e.g. the category from a
+   * /subjects link (still editable like any other answer). */
+  initialAnswers?: Answers;
 }) {
-  const [answers, setAnswers] = useState<Answers>({});
+  const [answers, setAnswers] = useState<Answers>(initialAnswers ?? {});
   const [editing, setEditing] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
@@ -124,17 +128,17 @@ export default function LiliForm({
   const answered = steps.filter((s) => s.id in answers);
 
   return (
-    <div className="mt-8 rounded-3xl border-2 border-gray-900 bg-white p-5 shadow-[5px_5px_0_0_#1f2937] sm:p-8">
+    <div className="mt-8 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-8">
       {answered.length > 0 && (
-        <dl className="mb-6 divide-y-2 divide-dashed divide-gray-200 border-b-2 border-dashed border-gray-200">
+        <dl className="mb-6 divide-y divide-slate-100 border-b border-slate-100">
           {answered.map((step) => (
             <div
               key={step.id}
               className={`flex items-start justify-between gap-4 py-3 ${styles.appear} ${editing === step.id ? "opacity-50" : ""}`}
             >
               <div className="min-w-0">
-                <dt className="text-xs font-bold uppercase tracking-wide text-gray-500">{step.label}</dt>
-                <dd className="mt-0.5 whitespace-pre-wrap break-words text-base font-semibold text-gray-900">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{step.label}</dt>
+                <dd className="mt-0.5 whitespace-pre-wrap break-words text-base font-medium text-slate-900">
                   {formatAnswer(step, answers[step.id])}
                 </dd>
               </div>
@@ -152,16 +156,8 @@ export default function LiliForm({
         <div className="flex items-end gap-3 sm:gap-4">
           <Lili className="w-16 shrink-0 sm:w-20" talking={!done} />
           <div
-            className={`relative mb-4 flex-1 rounded-2xl border-2 border-gray-900 px-4 py-3 text-base font-semibold leading-snug text-gray-900 shadow-[3px_3px_0_0_#1f2937] sm:text-lg ${
-              result?.ok && result.declined ? "bg-amber-100" : "bg-amber-50"
-            }`}
+            className="relative mb-4 flex-1 rounded-2xl rounded-bl-md bg-rose-50 px-4 py-3 text-base font-medium leading-snug text-slate-900 ring-1 ring-rose-100 sm:text-lg"
           >
-            <span
-              aria-hidden="true"
-              className={`absolute -left-[9px] bottom-4 h-4 w-4 rotate-45 border-b-2 border-l-2 border-gray-900 ${
-                result?.ok && result.declined ? "bg-amber-100" : "bg-amber-50"
-              }`}
-            />
             <span className="sr-only" aria-live="polite">
               {line}
             </span>
@@ -177,7 +173,7 @@ export default function LiliForm({
           <div className={`mt-2 ${styles.appear}`}>
             {active ? (
               <>
-                <label className="mb-2 block text-sm font-bold text-gray-800">{active.label}</label>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">{active.label}</label>
                 <StepInput
                   key={activeKey}
                   step={active}
@@ -357,7 +353,7 @@ function FilesInput({ step, onAnswer }: { step: Extract<Step, { kind: "files" }>
         📷 {files.length > 0 ? "Choose a different photo" : step.multiple ? "Choose photo(s)" : "Choose photo"}
         <input type="file" accept="image/*" multiple={step.multiple} className="sr-only" onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
       </label>
-      {files.length > 0 && <p className="text-sm text-gray-600">{files.map((f) => f.name).join(", ")}</p>}
+      {files.length > 0 && <p className="text-sm text-slate-600">{files.map((f) => f.name).join(", ")}</p>}
       <div className="flex items-center gap-4">
         <button type="button" className={primaryClass} disabled={files.length === 0} onClick={() => onAnswer(files)}>
           Next

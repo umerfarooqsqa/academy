@@ -35,12 +35,14 @@ export function verifiedTutorsLine(answers: Answers, counts: ZoneTutorCount[]): 
   return `Good news — ${total} verified ${label}tutor${total === 1 ? "" : "s"} near ${zone ? zone.name : loc.area}! `;
 }
 
-export const makeParentSteps = (counts: ZoneTutorCount[] = []): StepDef[] => [
+export const makeParentSteps = (counts: ZoneTutorCount[] = [], opts: { requestedTutorName?: string } = {}): StepDef[] => [
   {
     kind: "text",
     id: "subjects",
     label: "Subjects",
-    prompt: "Hi! I'm Lili 🦊 Which subject(s) do you need help with?",
+    prompt: opts.requestedTutorName
+      ? `Hi! I'm Lili 🦊 You're requesting ${opts.requestedTutorName} — just a few quick questions. Which subject(s) do you need help with?`
+      : "Hi! I'm Lili 🦊 Which subject(s) do you need help with?",
     placeholder: "e.g. Chemistry, Biology",
   },
   {
@@ -66,6 +68,17 @@ export const makeParentSteps = (counts: ZoneTutorCount[] = []): StepDef[] => [
       { value: "in_person", label: "Home tuition" },
       { value: "online", label: "Online" },
       { value: "both", label: "Either works" },
+    ],
+  },
+  {
+    kind: "chips",
+    id: "tutorGenderPreference",
+    label: "Tutor preference",
+    prompt: "Would you prefer a female or male tutor?",
+    options: [
+      { value: "any", label: "No preference" },
+      { value: "female", label: "Female tutor" },
+      { value: "male", label: "Male tutor" },
     ],
   },
   {
@@ -120,6 +133,7 @@ export function buildParentPayload(answers: Answers) {
     subjectGroup: answers.subjectGroup ?? "other",
     curriculum: String(answers.curriculum ?? "").trim(),
     deliveryMode: answers.deliveryMode ?? "in_person",
+    tutorGenderPreference: answers.tutorGenderPreference ?? "any",
     area: location?.area ?? "",
     latitude: location?.latitude ?? null,
     longitude: location?.longitude ?? null,

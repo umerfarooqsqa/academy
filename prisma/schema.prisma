@@ -72,6 +72,8 @@ model Tutor {
   // the admin on /tutors/[id]; shown on the website only when featured AND the
   // tutor is verified (lib/tutors/verified.ts). Get the tutor's OK first.
   featured          Boolean   @default(false)
+  gender            String? // "female" | "male" | null = not recorded (2026-10-15) — parents can
+                            // ask for a female/male tutor; see ParentRequest.tutorGenderPreference
   gradesVerifiedAt  DateTime? // admin checked the marksheet against the reported grades
   profilePhotoUrl   String?
   profileHeadline   String? // e.g. "MBBS student · A* in O-level Biology"
@@ -157,6 +159,10 @@ model ParentRequest {
   // Set when the parent came through "Request this tutor" on a featured
   // tutor's profile (2026-10-15) — a Match with that tutor is proposed too.
   preferredTutorId String?
+  // "any" | "female" | "male" (2026-10-15). Matching never proposes a tutor of
+  // the other recorded gender; tutors with no gender recorded still pass, with
+  // a note for the operator (lib/matching/engine.ts#passesGenderPreference).
+  tutorGenderPreference String @default("any")
 
   matches Match[]
 

@@ -49,6 +49,7 @@ export interface TutorDraft {
   area?: string | null;
   availability?: string[] | null;
   expectedFee?: number | null;
+  gender?: "female" | "male" | null; // website form only (2026-10-15)
   // Set when a shared Google Maps location link was found (lib/geo/googleMapsLink.ts)
   // — a bonus precision signal, never required, never part of missingTutorFields.
   preciseLatitude?: number | null;
@@ -64,6 +65,7 @@ export interface ParentDraft {
   budget?: number | null;
   deliveryMode?: string | null;
   availability?: string[] | null;
+  tutorGenderPreference?: "any" | "female" | "male" | null; // website form only (2026-10-15)
   // Set when a shared Google Maps location link was found (lib/geo/googleMapsLink.ts)
   // — a bonus precision signal, never required, never part of missingParentFields.
   preciseLatitude?: number | null;

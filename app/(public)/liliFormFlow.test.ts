@@ -126,6 +126,7 @@ describe("payload builders", () => {
       subjectGroup: "pre_medical",
       curriculum: "FSc",
       deliveryMode: "in_person",
+      tutorGenderPreference: "female",
       location: { latitude: 24.93, longitude: 67.1, area: "Gulshan-e-Iqbal", viaGps: true },
       availability: ["weekday_evening"],
       budget: "15,000",
@@ -139,6 +140,7 @@ describe("payload builders", () => {
       subjectGroup: "pre_medical",
       curriculum: "FSc",
       deliveryMode: "in_person",
+      tutorGenderPreference: "female",
       area: "Gulshan-e-Iqbal",
       latitude: 24.93,
       longitude: 67.1,
@@ -153,6 +155,7 @@ describe("payload builders", () => {
     const answers: Answers = {
       name: "Ayesha Khan",
       whatsappId: "03001234567",
+      gender: "female",
       location: { latitude: null, longitude: null, area: "Malir", viaGps: false },
       subjects: "Biology, Chemistry",
       subjectGroup: "pre_medical",
@@ -170,6 +173,7 @@ describe("payload builders", () => {
 
     const fd = buildTutorFormData(answers);
     expect(fd.get("area")).toBe("Malir");
+    expect(fd.get("gender")).toBe("female");
     expect(fd.get("latitude")).toBeNull();
     expect(fd.get("subjects")).toBe("Biology, Chemistry");
     expect(JSON.parse(fd.get("gradesBySubject") as string)).toEqual({ Biology: "A", Chemistry: "A-" });

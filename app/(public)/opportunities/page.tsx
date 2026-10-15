@@ -5,11 +5,17 @@
 // split, category filter, and an on-site "I'm interested" button (see
 // OpportunitiesClient.tsx and app/api/public/opportunity-interest).
 
+import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getOpenOpportunityListings } from "@/lib/opportunities/digest";
 import OpportunitiesClient from "./OpportunitiesClient";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Tuition jobs",
+  description: "Open home and online tuitions near you. Registered tutors can tap “I'm interested” to apply.",
+};
 
 export default async function OpportunitiesPage() {
   const [listings, areas] = await Promise.all([
@@ -18,8 +24,10 @@ export default async function OpportunitiesPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
-      <OpportunitiesClient listings={listings} areas={areas} />
+    <div className="bg-gradient-to-b from-sky-50/70 via-white to-white">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <OpportunitiesClient listings={listings} areas={areas} />
+      </div>
     </div>
   );
 }

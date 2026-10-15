@@ -39,6 +39,17 @@ export const TUTOR_STEPS: StepDef[] = [
     validate: validatePhone,
   },
   {
+    // Parents can ask for a female or male tutor (2026-10-15).
+    kind: "chips",
+    id: "gender",
+    label: "Gender",
+    prompt: "Are you a female or male tutor? Some families have a preference.",
+    options: [
+      { value: "female", label: "Female" },
+      { value: "male", label: "Male" },
+    ],
+  },
+  {
     kind: "location",
     id: "location",
     label: "Area",
@@ -119,6 +130,7 @@ export function buildTutorFormData(answers: Answers): FormData {
   const body = new FormData();
   body.append("whatsappId", String(answers.whatsappId ?? "").trim());
   body.append("name", String(answers.name ?? "").trim());
+  if (answers.gender === "female" || answers.gender === "male") body.append("gender", answers.gender);
   body.append("area", location?.area ?? "");
   if (location?.latitude != null && location.longitude != null) {
     body.append("latitude", String(location.latitude));

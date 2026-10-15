@@ -3,6 +3,7 @@
 // categorical field, distinct from the free-text `curriculum` field.
 
 export const SUBJECT_GROUPS = [
+  "school", // Primary–Matric (2026-10-15 — no level is declined any more)
   "pre_medical",
   "pre_engineering",
   "computer",
@@ -14,6 +15,7 @@ export const SUBJECT_GROUPS = [
 export type SubjectGroup = (typeof SUBJECT_GROUPS)[number];
 
 export const SUBJECT_GROUP_LABELS: Record<SubjectGroup, string> = {
+  school: "School (Primary–Matric)",
   pre_medical: "Pre-Medical",
   pre_engineering: "Pre-Engineering",
   computer: "Computer Science",

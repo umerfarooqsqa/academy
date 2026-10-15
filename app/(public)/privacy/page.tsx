@@ -18,8 +18,8 @@ const EFFECTIVE_DATE = "15 October 2026";
 function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="mt-10 scroll-mt-24">
-      <h2 className="font-heading text-2xl font-extrabold text-gray-900">{title}</h2>
-      <div className="mt-3 space-y-3 text-base leading-relaxed text-gray-700">{children}</div>
+      <h2 className="font-heading text-2xl font-bold text-slate-900">{title}</h2>
+      <div className="mt-3 space-y-3 text-base leading-relaxed text-slate-700">{children}</div>
     </section>
   );
 }
@@ -36,9 +36,9 @@ export default async function PrivacyPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
-      <h1 className="font-heading text-4xl font-extrabold tracking-tight text-gray-900">Privacy Policy</h1>
-      <p className="mt-2 text-sm text-gray-500">Effective {EFFECTIVE_DATE}</p>
-      <p className="mt-6 text-base leading-relaxed text-gray-700">
+      <h1 className="font-heading text-4xl font-bold tracking-tight text-slate-900">Privacy Policy</h1>
+      <p className="mt-2 text-sm text-slate-500">Effective {EFFECTIVE_DATE}</p>
+      <p className="mt-6 text-base leading-relaxed text-slate-700">
         {siteName} (also known as Lili Learn, part of Suntex Services) matches students with tutors in their own area.
         This policy explains what information we collect, why, who can see it, and how to have it deleted.
       </p>
@@ -46,12 +46,13 @@ export default async function PrivacyPage() {
       <Section title="What we collect">
         <p>
           <strong>From parents and students:</strong> the subjects and level needed, your area, your WhatsApp number,
-          preferred times, and — only if you choose to give them — your monthly budget and notes about the student.
+          preferred times, whether you&apos;d prefer a female or male tutor, and — only if you choose to give them —
+          your monthly budget and notes about the student.
         </p>
         <p>
-          <strong>From tutors:</strong> your name, WhatsApp number, area, subjects, curriculum/level, qualification,
-          the grades you report, availability, and — if you choose — your expected fee. To verify your identity and
-          grades we ask for a photo of your CNIC and your marksheet or transcript.
+          <strong>From tutors:</strong> your name, WhatsApp number, gender, area, subjects, curriculum/level,
+          qualification, the grades you report, availability, and — if you choose — your expected fee. To verify your
+          identity and grades we ask for a photo of your CNIC and your marksheet or transcript.
         </p>
         <p>
           <strong>Your location, only if you tap &ldquo;Share my location&rdquo;.</strong> Your browser asks your
@@ -81,7 +82,12 @@ export default async function PrivacyPage() {
         <p>
           On our website and our Facebook Page we only ever show a tuition&apos;s subject, level and area. We never
           publish a student&apos;s or parent&apos;s name, phone number, address or exact location. Public counts such
-          as &ldquo;verified tutors near you&rdquo; are totals per area, never individual tutors.
+          as &ldquo;verified tutors near you&rdquo; are totals per area.
+        </p>
+        <p>
+          <strong>Featured tutor profiles:</strong> with a tutor&apos;s agreement, we may show their profile on our
+          &ldquo;Our tutors&rdquo; page — first name and last initial, an optional photo, area, subjects, grades,
+          qualifications and teaching experience. We never show a tutor&apos;s phone number, fee, CNIC or documents.
         </p>
         <p>
           When we offer a parent a short list of tutors, the parent sees those tutors&apos; names and teaching details.
@@ -134,8 +140,8 @@ export default async function PrivacyPage() {
         </p>
       </Section>
 
-      <p className="mt-12 text-sm text-gray-500">
-        <Link href="/" className="font-semibold text-gray-700 underline underline-offset-2">
+      <p className="mt-12 text-sm text-slate-500">
+        <Link href="/" className="font-semibold text-slate-700 underline underline-offset-2">
           Back to home
         </Link>
       </p>

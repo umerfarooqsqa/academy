@@ -3,7 +3,7 @@
 // website feature).
 
 import { NextResponse } from "next/server";
-import { getSiteContent, saveSiteContent, type SiteContent } from "@/lib/siteContent";
+import { getSiteContent, normalizeSiteContent, saveSiteContent } from "@/lib/siteContent";
 
 export async function GET() {
   const content = await getSiteContent();
@@ -11,7 +11,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as SiteContent;
-  await saveSiteContent(body);
+  const body = await req.json();
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Invalid content" }, { status: 400 });
+  }
+  await saveSiteContent(normalizeSiteContent(body));
   return NextResponse.json({ ok: true });
 }

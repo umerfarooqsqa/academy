@@ -10,7 +10,41 @@
 import { prisma, transactionClient } from "@/lib/db";
 import { notifyOperator } from "@/lib/whatsapp/client";
 import { computeLiveTier } from "@/lib/tutors/tier";
-import { runMatchingEngine, type TutorCandidate } from "@/lib/matching/engine";
+import { runMatchingEngine, type ParentRequestInput, type TutorCandidate } from "@/lib/matching/engine";
+import type { ParentRequest, Tutor, TutorSubscription } from "@prisma/client";
+
+/** A Tutor row (with its subscriptions, for the live tier) as engine input. */
+export function toTutorCandidate(t: Tutor & { subscriptions: TutorSubscription[] }): TutorCandidate {
+  return {
+    id: t.id,
+    subjects: t.subjects,
+    subjectGroup: t.subjectGroup,
+    area: t.area,
+    deliveryMode: t.deliveryMode,
+    availability: t.availability,
+    expectedFee: t.expectedFee,
+    rating: t.rating,
+    ratingCount: t.ratingCount,
+    gradesBySubject: (t.gradesBySubject as Record<string, string> | null) ?? null,
+    status: t.status,
+    tier: computeLiveTier(t.subscriptions),
+    radiusOverrideKm: t.radiusOverrideKm,
+    gender: t.gender,
+  };
+}
+
+export function toParentInput(pr: ParentRequest): ParentRequestInput {
+  return {
+    id: pr.id,
+    subjects: pr.subjects,
+    subjectGroup: pr.subjectGroup,
+    area: pr.area,
+    deliveryMode: pr.deliveryMode,
+    budget: pr.budget,
+    availability: pr.availability,
+    tutorGenderPreference: pr.tutorGenderPreference,
+  };
+}
 
 export interface MatchingResult {
   parentRequestId: string;
@@ -36,32 +70,10 @@ export async function runMatchingForParent(parentRequestId: string): Promise<Mat
     prisma.areaZone.findMany(),
   ]);
 
-  const candidates: TutorCandidate[] = tutors.map((t) => ({
-    id: t.id,
-    subjects: t.subjects,
-    subjectGroup: t.subjectGroup,
-    area: t.area,
-    deliveryMode: t.deliveryMode,
-    availability: t.availability,
-    expectedFee: t.expectedFee,
-    rating: t.rating,
-    ratingCount: t.ratingCount,
-    gradesBySubject: (t.gradesBySubject as Record<string, string> | null) ?? null,
-    status: t.status,
-    tier: computeLiveTier(t.subscriptions),
-    radiusOverrideKm: t.radiusOverrideKm,
-  }));
+  const candidates = tutors.map(toTutorCandidate);
 
   const results = runMatchingEngine(
-    {
-      id: pr.id,
-      subjects: pr.subjects,
-      subjectGroup: pr.subjectGroup,
-      area: pr.area,
-      deliveryMode: pr.deliveryMode,
-      budget: pr.budget,
-      availability: pr.availability,
-    },
+    toParentInput(pr),
     candidates,
     zones,
   );

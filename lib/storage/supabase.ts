@@ -15,6 +15,10 @@ export interface UploadResult {
 // Safe default, degrades gracefully like every other config value here.
 const DEFAULT_BUCKET = "tutor-documents";
 
+/** PUBLIC bucket for featured-tutor profile photos (2026-10-15) — anything
+ * here can be opened by link, so never put documents in it. */
+export const PHOTO_BUCKET = "tutor-photos";
+
 /**
  * Uploads bytes to Supabase Storage at `path` within the configured bucket and
  * returns its storage URL. Since 2026-10-15 the bucket is PRIVATE (CNIC and
@@ -27,13 +31,14 @@ export async function uploadToSupabaseStorage(
   path: string,
   bytes: Buffer,
   contentType: string,
+  bucketOverride?: string,
 ): Promise<UploadResult> {
   const url = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_KEY;
   if (!url || !serviceKey) {
     return { ok: false, error: "Supabase env vars not configured" };
   }
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET || DEFAULT_BUCKET;
+  const bucket = bucketOverride ?? (process.env.SUPABASE_STORAGE_BUCKET || DEFAULT_BUCKET);
 
   try {
     const res = await fetch(`${url}/storage/v1/object/${bucket}/${path}`, {

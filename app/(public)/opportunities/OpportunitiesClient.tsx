@@ -64,14 +64,14 @@ export default function OpportunitiesClient({ listings, areas }: { listings: Opp
 
   return (
     <div>
-      <h1 className="text-center font-heading text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+      <p className="text-center text-sm font-semibold uppercase tracking-wider text-rose-600">Tuition jobs</p>
+      <h1 className="mt-2 text-center font-heading text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
         Tuitions near you
       </h1>
 
       <div className="mx-auto mt-6 flex max-w-2xl items-end gap-3 sm:gap-4">
         <Lili className="w-16 shrink-0 sm:w-20" />
-        <div className="relative mb-4 flex-1 rounded-2xl border-2 border-gray-900 bg-amber-50 px-4 py-3 text-base font-semibold leading-snug text-gray-900 shadow-[3px_3px_0_0_#1f2937]">
-          <span aria-hidden className="absolute -left-[9px] bottom-4 h-4 w-4 rotate-45 border-b-2 border-l-2 border-gray-900 bg-amber-50" />
+        <div className="relative mb-4 flex-1 rounded-2xl rounded-bl-md bg-white px-4 py-3 text-base font-medium leading-snug text-slate-900 shadow-sm ring-1 ring-slate-200">
           <span aria-live="polite">{line}</span>
         </div>
       </div>
@@ -122,9 +122,9 @@ export default function OpportunitiesClient({ listings, areas }: { listings: Opp
         filtered.length > 0 && <Section title={`Open tuitions (${filtered.length})`} listings={filtered} />
       )}
 
-      <p className="mt-12 text-center text-sm text-gray-600">
+      <p className="mt-12 text-center text-sm text-slate-600">
         New tutor?{" "}
-        <Link href="/become-a-tutor" className="font-bold text-gray-900 underline decoration-rose-400 decoration-2 underline-offset-4">
+        <Link href="/become-a-tutor" className="font-semibold text-rose-600 hover:text-rose-700">
           Register first
         </Link>{" "}
         — it takes 3 minutes.
@@ -136,9 +136,9 @@ export default function OpportunitiesClient({ listings, areas }: { listings: Opp
 function Section({ title, listings, empty }: { title: string; listings: (OpportunityListing & { distanceKm?: number })[]; empty?: string }) {
   return (
     <section className="mt-8 text-left">
-      <h2 className="font-heading text-xl font-extrabold text-gray-900">{title}</h2>
+      <h2 className="font-heading text-xl font-semibold text-slate-900">{title}</h2>
       {listings.length === 0 ? (
-        <p className="mt-3 text-sm text-gray-500">{empty}</p>
+        <p className="mt-3 text-sm text-slate-500">{empty}</p>
       ) : (
         <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {listings.map((l) => (
@@ -189,23 +189,23 @@ function OpportunityCard({ listing }: { listing: OpportunityListing & { distance
   }
 
   return (
-    <article className="flex flex-col rounded-3xl border-2 border-gray-900 bg-white p-5 shadow-[4px_4px_0_0_#1f2937]">
+    <article className="flex flex-col rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
-        <span className="rounded-full border-2 border-gray-900 bg-teal-100 px-2.5 py-0.5 text-xs font-bold text-gray-900">
+        <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-200">
           {groupLabel(listing.subjectGroup)}
         </span>
-        <span className="text-xs text-gray-400" suppressHydrationWarning>
+        <span className="text-xs text-slate-400" suppressHydrationWarning>
           {postedAgo(listing.publishedAt)}
         </span>
       </div>
-      <h3 className="mt-3 font-heading text-xl font-extrabold leading-tight text-gray-900">
+      <h3 className="mt-3 font-heading text-lg font-semibold leading-tight text-slate-900">
         {listing.subjects.join(", ") || "Tutor needed"}
       </h3>
-      <p className="mt-0.5 text-sm text-gray-600">{listing.curriculum}</p>
-      <p className="mt-3 text-sm font-semibold text-gray-800">
+      <p className="mt-0.5 text-sm text-slate-600">{listing.curriculum}</p>
+      <p className="mt-3 text-sm font-medium text-slate-700">
         {online ? "💻 Online" : `📍 ${listing.area}`}
         {listing.distanceKm != null && <span className="text-rose-600"> · ~{listing.distanceKm.toFixed(1)} km</span>}
-        {listing.deliveryMode === "both" && <span className="font-normal text-gray-500"> · or online</span>}
+        {listing.deliveryMode === "both" && <span className="font-normal text-slate-500"> · or online</span>}
       </p>
 
       <div className="mt-auto pt-4">
@@ -216,7 +216,7 @@ function OpportunityCard({ listing }: { listing: OpportunityListing & { distance
         )}
         {interest.step === "form" && (
           <form onSubmit={submit} className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-700" htmlFor={`wa-${listing.opportunityCode}`}>
+            <label className="text-xs font-semibold text-slate-700" htmlFor={`wa-${listing.opportunityCode}`}>
               Your WhatsApp number
             </label>
             <div className="flex gap-2">
@@ -233,7 +233,7 @@ function OpportunityCard({ listing }: { listing: OpportunityListing & { distance
                 {interest.sending ? "…" : "Send"}
               </button>
             </div>
-            {interest.error && <p className="text-xs font-semibold text-red-600">{interest.error}</p>}
+            {interest.error && <p className="text-xs font-medium text-red-600">{interest.error}</p>}
             <button type="button" className={`${linkClass} self-start text-xs`} onClick={() => setInterest({ step: "idle" })}>
               Cancel
             </button>
@@ -241,8 +241,12 @@ function OpportunityCard({ listing }: { listing: OpportunityListing & { distance
         )}
         {interest.step === "done" && (
           <div
-            className={`rounded-2xl border-2 border-gray-900 px-3 py-2.5 text-sm font-semibold ${
-              interest.outcome === "claimed" ? "bg-teal-100" : interest.outcome === "taken" ? "bg-gray-100" : "bg-amber-100"
+            className={`rounded-xl px-3 py-2.5 text-sm font-medium ring-1 ring-inset ${
+              interest.outcome === "claimed"
+                ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                : interest.outcome === "taken"
+                  ? "bg-slate-50 text-slate-700 ring-slate-200"
+                  : "bg-amber-50 text-amber-800 ring-amber-200"
             }`}
           >
             {interest.message}
@@ -253,9 +257,9 @@ function OpportunityCard({ listing }: { listing: OpportunityListing & { distance
             )}
           </div>
         )}
-        <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+        <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
           <span>Ref {listing.opportunityCode}</span>
-          <button type="button" className="font-bold hover:text-gray-900" onClick={share}>
+          <button type="button" className="font-semibold hover:text-slate-900" onClick={share}>
             {shared ? "Copied!" : "Share"}
           </button>
         </div>

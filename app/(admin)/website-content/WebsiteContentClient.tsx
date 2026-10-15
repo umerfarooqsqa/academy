@@ -1,8 +1,55 @@
 "use client";
 
+// /website-content editor (2026-10-13; 2026-10-15 redesign added contact
+// details, titled how-it-works steps and FAQs). Everything here is shown on
+// the public website — see lib/siteContent.ts for where each field appears.
+
 import { useState } from "react";
 import { card, input, label, btnPrimary, btnSecondary } from "@/app/components/ui";
-import type { SiteContent } from "@/lib/siteContent";
+import type { Faq, HowItWorksStep, SiteContent } from "@/lib/siteContent";
+
+type ListKey = "howItWorksSteps" | "faqs" | "testimonials";
+
+function Field({
+  title,
+  hint,
+  value,
+  onChange,
+  multiline = false,
+  type = "text",
+  placeholder,
+}: {
+  title: string;
+  hint?: string;
+  value: string;
+  onChange: (v: string) => void;
+  multiline?: boolean;
+  type?: string;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className={label}>
+        {title}
+        {hint && <span className="ml-1 font-normal text-gray-500">— {hint}</span>}
+      </label>
+      {multiline ? (
+        <textarea className={`${input} min-h-20`} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      ) : (
+        <input className={input} type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      )}
+    </div>
+  );
+}
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="flex flex-col gap-4 border-t border-gray-200 pt-5 first:border-t-0 first:pt-0">
+      <legend className="mb-1 text-base font-semibold text-gray-900">{title}</legend>
+      {children}
+    </fieldset>
+  );
+}
 
 export default function WebsiteContentClient({ initial }: { initial: SiteContent }) {
   const [content, setContent] = useState<SiteContent>(initial);
@@ -22,151 +69,153 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
     setTimeout(() => setSaved(false), 2000);
   }
 
-  function updateStep(i: number, value: string) {
-    const steps = [...content.howItWorks];
-    steps[i] = value;
-    setContent({ ...content, howItWorks: steps });
+  const set = <K extends keyof SiteContent>(key: K, value: SiteContent[K]) => setContent((c) => ({ ...c, [key]: value }));
+
+  function updateItem<K extends ListKey>(key: K, i: number, patch: Partial<SiteContent[K][number]>) {
+    setContent((c) => ({ ...c, [key]: (c[key] as object[]).map((item, idx) => (idx === i ? { ...item, ...patch } : item)) }));
+  }
+  function addItem<K extends ListKey>(key: K, item: SiteContent[K][number]) {
+    setContent((c) => ({ ...c, [key]: [...(c[key] as object[]), item] }));
+  }
+  function removeItem(key: ListKey, i: number) {
+    setContent((c) => ({ ...c, [key]: (c[key] as object[]).filter((_, idx) => idx !== i) }));
+  }
+  function moveItem(key: ListKey, i: number, dir: -1 | 1) {
+    setContent((c) => {
+      const list = [...(c[key] as object[])];
+      const j = i + dir;
+      if (j < 0 || j >= list.length) return c;
+      [list[i], list[j]] = [list[j], list[i]];
+      return { ...c, [key]: list };
+    });
   }
 
-  function addStep() {
-    setContent({ ...content, howItWorks: [...content.howItWorks, ""] });
-  }
-
-  function removeStep(i: number) {
-    setContent({ ...content, howItWorks: content.howItWorks.filter((_, idx) => idx !== i) });
-  }
-
-  function updateTestimonial(i: number, field: "name" | "quote", value: string) {
-    const testimonials = content.testimonials.map((t, idx) => (idx === i ? { ...t, [field]: value } : t));
-    setContent({ ...content, testimonials });
-  }
-
-  function addTestimonial() {
-    setContent({ ...content, testimonials: [...content.testimonials, { name: "", quote: "" }] });
-  }
-
-  function removeTestimonial(i: number) {
-    setContent({ ...content, testimonials: content.testimonials.filter((_, idx) => idx !== i) });
-  }
+  const rowButtons = (key: ListKey, i: number) => (
+    <div className="flex gap-1.5">
+      <button className={btnSecondary} onClick={() => moveItem(key, i, -1)} type="button" aria-label="Move up">
+        ↑
+      </button>
+      <button className={btnSecondary} onClick={() => moveItem(key, i, 1)} type="button" aria-label="Move down">
+        ↓
+      </button>
+      <button className={btnSecondary} onClick={() => removeItem(key, i)} type="button">
+        Remove
+      </button>
+    </div>
+  );
 
   return (
-    <div className={`${card} mt-4 flex flex-col gap-4`}>
-      <div>
-        <label className={label}>Site name (shown in the nav and footer)</label>
-        <input className={input} value={content.siteName} onChange={(e) => setContent({ ...content, siteName: e.target.value })} />
-      </div>
-      <div>
-        <label className={label}>Contact email (shown on the Privacy page for data requests)</label>
-        <input
-          className={input}
+    <div className={`${card} mt-4 flex flex-col gap-6`}>
+      <Group title="Basics">
+        <Field title="Site name" hint="nav, footer and browser tab" value={content.siteName} onChange={(v) => set("siteName", v)} />
+        <Field title="Footer tagline" hint="one line under the logo in the footer" value={content.footerTagline} onChange={(v) => set("footerTagline", v)} />
+      </Group>
+
+      <Group title="Contact details (each one is hidden on the site while empty)">
+        <Field
+          title="WhatsApp number"
+          hint="the floating WhatsApp button, /contact and the footer"
+          placeholder="e.g. 0300 1234567"
+          value={content.whatsappNumber}
+          onChange={(v) => set("whatsappNumber", v)}
+        />
+        <Field title="Phone number for calls" placeholder="e.g. 0300 1234567" value={content.phoneNumber} onChange={(v) => set("phoneNumber", v)} />
+        <Field
+          title="Contact email"
+          hint="also used on the Privacy page for data requests"
           type="email"
           placeholder="e.g. hello@yourdomain.com"
           value={content.contactEmail}
-          onChange={(e) => setContent({ ...content, contactEmail: e.target.value })}
+          onChange={(v) => set("contactEmail", v)}
         />
-      </div>
-      <div>
-        <label className={label}>Facebook Page link (shown in the website footer)</label>
-        <input
-          className={input}
+        <Field title="Area served" hint='shown as "Serving …"' placeholder="e.g. Karachi" value={content.serviceArea} onChange={(v) => set("serviceArea", v)} />
+        <Field
+          title="Facebook Page link"
           type="url"
-          placeholder="https://www.facebook.com/YourPage/ — leave empty to hide"
+          placeholder="https://www.facebook.com/YourPage/"
           value={content.facebookUrl}
-          onChange={(e) => setContent({ ...content, facebookUrl: e.target.value })}
+          onChange={(v) => set("facebookUrl", v)}
         />
-      </div>
-      <div>
-        <label className={label}>Google Business Place ID (shows your live Google rating and reviews on the homepage)</label>
-        <input
-          className={input}
-          placeholder="e.g. ChIJN1t_tDeuEmsRUsoyG83frY4 — leave empty to hide the section"
+        <Field
+          title="Google Business Place ID"
+          hint="shows your live Google rating and reviews on the homepage"
+          placeholder="e.g. ChIJN1t_tDeuEmsRUsoyG83frY4"
           value={content.googlePlaceId}
-          onChange={(e) => setContent({ ...content, googlePlaceId: e.target.value })}
+          onChange={(v) => set("googlePlaceId", v)}
         />
-      </div>
-      <div>
-        <label className={label}>Eyebrow badge (small text above the headline)</label>
-        <input className={input} value={content.heroEyebrow} onChange={(e) => setContent({ ...content, heroEyebrow: e.target.value })} />
-      </div>
-      <div>
-        <label className={label}>Hero headline</label>
-        <input
-          className={input}
-          value={content.heroHeadline}
-          onChange={(e) => setContent({ ...content, heroHeadline: e.target.value })}
-        />
-      </div>
-      <div>
-        <label className={label}>Site description (shown in Google results and link previews — no longer on the homepage)</label>
-        <textarea
-          className={`${input} min-h-20`}
+      </Group>
+
+      <Group title="Homepage">
+        <Field title="Badge above the headline" value={content.heroEyebrow} onChange={(v) => set("heroEyebrow", v)} />
+        <Field title="Headline" value={content.heroHeadline} onChange={(v) => set("heroHeadline", v)} />
+        <Field
+          title="Text under the headline"
+          hint="also the description in Google results and link previews"
+          multiline
           value={content.heroSubheadline}
-          onChange={(e) => setContent({ ...content, heroSubheadline: e.target.value })}
+          onChange={(v) => set("heroSubheadline", v)}
         />
-      </div>
-      <div>
-        <label className={label}>Parent pitch</label>
-        <textarea
-          className={`${input} min-h-20`}
-          value={content.parentPitch}
-          onChange={(e) => setContent({ ...content, parentPitch: e.target.value })}
-        />
-      </div>
-      <div>
-        <label className={label}>Tutor pitch</label>
-        <textarea
-          className={`${input} min-h-20`}
-          value={content.tutorPitch}
-          onChange={(e) => setContent({ ...content, tutorPitch: e.target.value })}
-        />
-      </div>
+        <Field title="Parent pitch" hint='"Why families choose us"' multiline value={content.parentPitch} onChange={(v) => set("parentPitch", v)} />
+        <Field title="Tutor pitch" hint='"Looking for tuitions near you?"' multiline value={content.tutorPitch} onChange={(v) => set("tutorPitch", v)} />
+      </Group>
 
-      <div>
-        <label className={label}>How it works (steps)</label>
-        <div className="flex flex-col gap-2">
-          {content.howItWorks.map((step, i) => (
-            <div key={i} className="flex gap-1.5">
-              <input className={input} value={step} onChange={(e) => updateStep(i, e.target.value)} />
-              <button className={btnSecondary} onClick={() => removeStep(i)} type="button">
-                Remove
-              </button>
+      <Group title="How it works (steps, in order)">
+        {content.howItWorksSteps.map((step: HowItWorksStep, i) => (
+          <div key={i} className="flex flex-col gap-1.5 rounded border border-gray-200 p-3">
+            <span className="text-xs font-semibold text-gray-500">Step {i + 1}</span>
+            <input className={input} placeholder="Title" value={step.title} onChange={(e) => updateItem("howItWorksSteps", i, { title: e.target.value })} />
+            <textarea
+              className={`${input} min-h-16`}
+              placeholder="Description"
+              value={step.text}
+              onChange={(e) => updateItem("howItWorksSteps", i, { text: e.target.value })}
+            />
+            {rowButtons("howItWorksSteps", i)}
+          </div>
+        ))}
+        <button className={btnSecondary} onClick={() => addItem("howItWorksSteps", { title: "", text: "" })} type="button">
+          Add step
+        </button>
+      </Group>
+
+      <Group title="FAQ (homepage shows the first 6 parent questions; /faq shows all)">
+        {content.faqs.map((f: Faq, i) => (
+          <div key={i} className="flex flex-col gap-1.5 rounded border border-gray-200 p-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500">For</span>
+              <select
+                className={`${input} w-auto`}
+                value={f.audience}
+                onChange={(e) => updateItem("faqs", i, { audience: e.target.value as Faq["audience"] })}
+              >
+                <option value="parent">Parents</option>
+                <option value="tutor">Tutors</option>
+              </select>
             </div>
-          ))}
-          <button className={btnSecondary} onClick={addStep} type="button">
-            Add step
-          </button>
-        </div>
-      </div>
+            <input className={input} placeholder="Question" value={f.q} onChange={(e) => updateItem("faqs", i, { q: e.target.value })} />
+            <textarea className={`${input} min-h-20`} placeholder="Answer" value={f.a} onChange={(e) => updateItem("faqs", i, { a: e.target.value })} />
+            {rowButtons("faqs", i)}
+          </div>
+        ))}
+        <button className={btnSecondary} onClick={() => addItem("faqs", { q: "", a: "", audience: "parent" })} type="button">
+          Add question
+        </button>
+      </Group>
 
-      <div>
-        <label className={label}>Testimonials</label>
-        <div className="flex flex-col gap-2">
-          {content.testimonials.map((t, i) => (
-            <div key={i} className="flex flex-col gap-1 rounded border border-gray-200 p-2">
-              <input
-                className={input}
-                placeholder="Name"
-                value={t.name}
-                onChange={(e) => updateTestimonial(i, "name", e.target.value)}
-              />
-              <textarea
-                className={`${input} min-h-16`}
-                placeholder="Quote"
-                value={t.quote}
-                onChange={(e) => updateTestimonial(i, "quote", e.target.value)}
-              />
-              <button className={btnSecondary} onClick={() => removeTestimonial(i)} type="button">
-                Remove
-              </button>
-            </div>
-          ))}
-          <button className={btnSecondary} onClick={addTestimonial} type="button">
-            Add testimonial
-          </button>
-        </div>
-      </div>
+      <Group title="Testimonials (hidden while empty — only add real ones, with permission)">
+        {content.testimonials.map((t, i) => (
+          <div key={i} className="flex flex-col gap-1.5 rounded border border-gray-200 p-3">
+            <input className={input} placeholder="Name" value={t.name} onChange={(e) => updateItem("testimonials", i, { name: e.target.value })} />
+            <textarea className={`${input} min-h-16`} placeholder="Quote" value={t.quote} onChange={(e) => updateItem("testimonials", i, { quote: e.target.value })} />
+            {rowButtons("testimonials", i)}
+          </div>
+        ))}
+        <button className={btnSecondary} onClick={() => addItem("testimonials", { name: "", quote: "" })} type="button">
+          Add testimonial
+        </button>
+      </Group>
 
-      <div>
+      <div className="sticky bottom-0 -mx-1 border-t border-gray-200 bg-white px-1 pt-4">
         <button className={btnPrimary} disabled={busy} onClick={save}>
           {busy ? "Saving…" : saved ? "Saved!" : "Save changes"}
         </button>

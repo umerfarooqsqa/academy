@@ -29,6 +29,7 @@ export interface TutorCandidate {
   status: string; // must be "active" to be eligible — callers should already filter, checked defensively here
   tier: string; // "free" | "premium"
   radiusOverrideKm: number | null;
+  gender?: string | null; // "female" | "male" | null (not recorded) — 2026-10-15
 }
 
 export interface ParentRequestInput {
@@ -39,6 +40,7 @@ export interface ParentRequestInput {
   deliveryMode: string; // "in_person" | "online" | "both"
   budget: number | null;
   availability: string[];
+  tutorGenderPreference?: string; // "any" | "female" | "male" — 2026-10-15
 }
 
 export interface MatchCandidate {
@@ -105,7 +107,52 @@ function availabilityOverlap(tutorAvail: string[], parentAvail: string[]): numbe
 function passesHardFilters(tutor: TutorCandidate, parent: ParentRequestInput): boolean {
   if (tutor.status !== "active") return false;
   if (tutor.subjectGroup !== parent.subjectGroup) return false;
+  if (!passesGenderPreference(tutor, parent)) return false;
   return subjectOverlap(tutor.subjects, parent.subjects).length > 0;
+}
+
+/** The parent's tutor-gender preference, if they stated one ("female"/"male"). */
+function genderPreference(parent: ParentRequestInput): "female" | "male" | null {
+  const p = parent.tutorGenderPreference;
+  return p === "female" || p === "male" ? p : null;
+}
+
+/**
+ * Gender preference (2026-10-15 operator decision — "strict, unknowns
+ * allowed"): a tutor whose recorded gender differs from the parent's stated
+ * preference is never proposed; a tutor with no gender recorded still passes,
+ * with a note for the operator to check (genderNote).
+ */
+function passesGenderPreference(tutor: TutorCandidate, parent: ParentRequestInput): boolean {
+  const pref = genderPreference(parent);
+  return !pref || !tutor.gender || tutor.gender === pref;
+}
+
+function genderNote(tutor: TutorCandidate, parent: ParentRequestInput): string | null {
+  const pref = genderPreference(parent);
+  return pref && !tutor.gender ? `tutor gender not recorded — parent asked for ${pref}` : null;
+}
+
+/**
+ * The same hard rules (Step 1 + Step 2's area rule) for ONE tutor a parent
+ * asked for by name via "Request this tutor" on a featured profile
+ * (2026-10-15). Area passes when the request is online, the zones are the
+ * same, or the tutor's zone is within the radius Tier B would allow — the
+ * area rule is never bypassed just because the parent picked the tutor.
+ */
+export function checkRequestedTutor(
+  tutor: TutorCandidate,
+  parent: ParentRequestInput,
+  zones: AreaZoneInput[],
+): { eligible: true; note: string | null } | { eligible: false; reason: string } {
+  if (tutor.status !== "active") return { eligible: false, reason: "tutor not active" };
+  if (tutor.subjectGroup !== parent.subjectGroup) return { eligible: false, reason: "different category" };
+  if (subjectOverlap(tutor.subjects, parent.subjects).length === 0) return { eligible: false, reason: "no shared subject" };
+  if (!passesGenderPreference(tutor, parent)) return { eligible: false, reason: "gender preference" };
+  if (parent.deliveryMode !== "online" && tieredAreaFilter([tutor], parent, zones).candidates.length === 0) {
+    return { eligible: false, reason: "outside the parent's area" };
+  }
+  return { eligible: true, note: genderNote(tutor, parent) };
 }
 
 /**
@@ -200,7 +247,10 @@ export function runMatchingEngine(
         distanceKm: d,
         overlappingSubjects: overlap,
       },
-      internalNote: budgetNoteNeeded ? "budget not provided — confirm with parent" : null,
+      internalNote:
+        [budgetNoteNeeded ? "budget not provided — confirm with parent" : null, genderNote(t, parent)]
+          .filter(Boolean)
+          .join("; ") || null,
     };
   });
 

@@ -40,7 +40,7 @@ export const TUTOR_FOLLOWUP_QUESTIONS: Record<
   area: "Which area are you based in, or what's a nearby landmark?",
   subjects: "Which subject(s) do you teach?",
   subjectGroup:
-    "Which category best fits — pre-medical, pre-engineering, computer science, skills/vocational, or university-level?",
+    "Which category best fits — school (primary–Matric), pre-medical, pre-engineering, computer science, skills/vocational, or university-level?",
   curriculum:
     "Which curriculum/level — O/A-levels, FSc/Intermediate, a specific degree program, or something else?",
   qualification: "What's your academic background/qualification?",
@@ -108,8 +108,8 @@ export const SENDER_TYPE_UNCLEAR =
 // one message (this reply becomes the "one raw message" the extractor works on). ---
 export const TUTOR_INTAKE_PROMPT =
   "Great! In one message, tell us about your tutoring: your full name, the area (or a nearby " +
-  "landmark) you're based in, the subject(s) you teach, the category (pre-medical, " +
-  "pre-engineering, computer science, skills, or university-level), the curriculum/level " +
+  "landmark) you're based in, the subject(s) you teach, the category (school/Matric, " +
+  "pre-medical, pre-engineering, computer science, skills, or university-level), the curriculum/level " +
   "(O/A-levels, FSc/Intermediate, a degree program, etc.), your qualification, and when you're " +
   "generally free to teach.";
 

@@ -140,11 +140,11 @@ const SELECT = {
   ratingCount: true,
 } as const;
 
-const PUBLIC_WHERE = { ...VERIFIED_TUTOR_WHERE, featured: true };
+export const PUBLIC_TUTOR_WHERE = { ...VERIFIED_TUTOR_WHERE, featured: true };
 
 export async function getFeaturedTutors(): Promise<PublicTutorProfile[]> {
   const rows = await prisma.tutor.findMany({
-    where: PUBLIC_WHERE,
+    where: PUBLIC_TUTOR_WHERE,
     select: SELECT,
     orderBy: [{ ratingCount: "desc" }, { createdAt: "asc" }],
   });
@@ -153,6 +153,59 @@ export async function getFeaturedTutors(): Promise<PublicTutorProfile[]> {
 
 /** A single featured, verified tutor — null for anyone else (the page 404s). */
 export async function getPublicTutorProfile(id: string): Promise<PublicTutorProfile | null> {
-  const row = await prisma.tutor.findFirst({ where: { ...PUBLIC_WHERE, id }, select: SELECT });
+  const row = await prisma.tutor.findFirst({ where: { ...PUBLIC_TUTOR_WHERE, id }, select: SELECT });
   return row ? toPublicProfile(row) : null;
+}
+
+export async function countFeaturedTutors(): Promise<number> {
+  return prisma.tutor.count({ where: PUBLIC_TUTOR_WHERE });
+}
+
+/** Body fields the admin "Public profile" card sends to PATCH /api/tutors/[id]. */
+const LIMITS = { headline: 120, bio: 2000, field: 120, description: 500, items: 10 } as const;
+
+const cap = (v: unknown, n: number) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+
+/**
+ * Validates and tidies the public-profile part of a tutor PATCH (2026-10-15).
+ * Only keys present in the body are returned; strings are trimmed and
+ * length-capped, empty strings become null, lists are capped at 10 entries.
+ */
+export function parsePublicProfilePatch(body: Record<string, unknown>): { data: Record<string, unknown> } | { error: string } {
+  const data: Record<string, unknown> = {};
+  if ("featured" in body) {
+    if (typeof body.featured !== "boolean") return { error: "featured must be true or false" };
+    data.featured = body.featured;
+  }
+  if ("gradesVerified" in body) {
+    if (typeof body.gradesVerified !== "boolean") return { error: "gradesVerified must be true or false" };
+    data.gradesVerifiedAt = body.gradesVerified ? new Date() : null;
+  }
+  if ("profileHeadline" in body) data.profileHeadline = cap(body.profileHeadline, LIMITS.headline) || null;
+  if ("profileBio" in body) data.profileBio = cap(body.profileBio, LIMITS.bio) || null;
+  if ("yearsExperience" in body) {
+    const v = body.yearsExperience;
+    if (v === null || v === "") data.yearsExperience = null;
+    else {
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 0 || n > 60) return { error: "Years of experience must be a whole number from 0 to 60" };
+      data.yearsExperience = n;
+    }
+  }
+  if ("profileExperience" in body) {
+    data.profileExperience = parseExperience(body.profileExperience)
+      .slice(0, LIMITS.items)
+      .map((e) => ({
+        title: cap(e.title, LIMITS.field),
+        place: cap(e.place, LIMITS.field),
+        period: cap(e.period, LIMITS.field),
+        description: cap(e.description, LIMITS.description),
+      }));
+  }
+  if ("profileEducation" in body) {
+    data.profileEducation = parseEducation(body.profileEducation)
+      .slice(0, LIMITS.items)
+      .map((e) => ({ degree: cap(e.degree, LIMITS.field), institution: cap(e.institution, LIMITS.field), year: cap(e.year, 20) }));
+  }
+  return { data };
 }

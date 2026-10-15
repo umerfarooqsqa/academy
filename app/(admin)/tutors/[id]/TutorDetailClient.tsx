@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AVAILABILITY_TAGS } from "@/lib/messages";
 import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
 import { card, input, label, btnPrimary, btnSecondary, btnDanger, badge } from "@/app/components/ui";
+import PublicProfileCard, { type PublicProfileFields } from "./PublicProfileCard";
 
 interface TutorDetailProps {
   tutor: {
@@ -20,6 +21,7 @@ interface TutorDetailProps {
     cnicImageUrl: string | null;
     cnicVerifiedAt: Date | null;
     marksheetImageUrls: string[];
+    gender: string | null;
     area: string;
     availability: string[];
     expectedFee: number | null;
@@ -28,7 +30,7 @@ interface TutorDetailProps {
     status: string;
     internalNote: string | null;
     tier: string;
-  };
+  } & PublicProfileFields;
   subscriptions: Array<{
     id: string;
     status: string;
@@ -73,6 +75,7 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
     deliveryMode: tutor.deliveryMode,
     radiusOverrideKm: tutor.radiusOverrideKm?.toString() ?? "",
     internalNote: tutor.internalNote ?? "",
+    gender: tutor.gender ?? "",
   });
   const [subForm, setSubForm] = useState({
     amount: "3000",
@@ -108,6 +111,7 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
         deliveryMode: form.deliveryMode,
         radiusOverrideKm: form.radiusOverrideKm ? Number(form.radiusOverrideKm) : null,
         internalNote: form.internalNote || null,
+        gender: form.gender || null,
       }),
     });
     setBusy(false);
@@ -241,6 +245,14 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
               <option value="both">both</option>
             </select>
           </div>
+          <div>
+            <label className={label}>Gender (parents can ask for a female/male tutor)</label>
+            <select className={input} value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}>
+              <option value="">not recorded</option>
+              <option value="female">female</option>
+              <option value="male">male</option>
+            </select>
+          </div>
           {tutor.tier === "premium" && (
             <div>
               <label className={label}>Radius override (km, premium-only, 6.5)</label>
@@ -351,6 +363,8 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
             </div>
           </div>
         </div>
+
+        <PublicProfileCard tutor={tutor} />
 
         <div className={card}>
           <h2 className="text-sm font-semibold text-gray-900">Subscription (6.5 — manual, no gateway)</h2>

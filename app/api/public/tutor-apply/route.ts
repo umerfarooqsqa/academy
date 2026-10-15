@@ -12,6 +12,7 @@
 // guessing from order.
 
 import { NextResponse } from "next/server";
+import { normalizeGender } from "@/lib/tutors/gender";
 import { allowAttempt, clientIp, HOUR } from "@/lib/security/rateLimit";
 import { prisma } from "@/lib/db";
 import { upsertTutor, recordTutorDocument, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
     gradesBySubject: parseGradesBySubject(form.get("gradesBySubject")),
     availability: availabilityRaw.length > 0 ? availabilityRaw : null,
     expectedFee: form.get("expectedFee") ? Number(form.get("expectedFee")) : null,
+    gender: normalizeGender(form.get("gender")),
   };
 
   // From the Lili chat's "Share my location" button (browser geolocation).

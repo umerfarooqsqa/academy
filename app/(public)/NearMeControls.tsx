@@ -23,9 +23,9 @@ export default function NearMeControls({
 
   if (location) {
     return (
-      <p className="mt-5 text-base font-semibold text-gray-800">
+      <p className="mt-6 text-base font-medium text-slate-700">
         📍 {locatedLabel}{" "}
-        <button type="button" onClick={reset} className="ml-1 text-sm font-bold text-rose-600 underline underline-offset-2">
+        <button type="button" onClick={reset} className="ml-1 text-sm font-semibold text-rose-600 underline underline-offset-2">
           Change
         </button>
       </p>
@@ -33,22 +33,22 @@ export default function NearMeControls({
   }
 
   return (
-    <div className="mt-5 flex flex-col items-center gap-3">
+    <div className="mt-6 flex flex-col items-center gap-3">
       <button type="button" className={primaryClass} onClick={locate} disabled={asking}>
         {asking ? "Finding you…" : error ? "📍 Try again" : buttonLabel}
       </button>
       {asking && (
-        <p className="max-w-md text-sm text-gray-600">
+        <p className="max-w-md text-sm text-slate-600">
           Your browser will ask to use your location — tap <strong>Allow</strong>. On a computer the pop-up appears
           near the address bar.
         </p>
       )}
-      {error && <p className="max-w-md text-sm font-semibold text-amber-700">{error}</p>}
+      {error && <p className="max-w-md text-sm font-medium text-amber-700">{error}</p>}
       {areas.length > 0 && (
-        <label className="flex items-center gap-2 text-sm text-gray-600">
+        <label className="flex items-center gap-2 text-sm text-slate-600">
           or pick your area:
           <select
-            className="rounded-full border-2 border-gray-900 bg-white px-3 py-1.5 text-sm font-semibold text-gray-900"
+            className="rounded-full bg-white px-3 py-1.5 text-sm font-medium text-slate-900 ring-1 ring-inset ring-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500"
             defaultValue=""
             onChange={(e) => {
               const area = areas.find((a) => a.name === e.target.value);

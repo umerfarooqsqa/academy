@@ -12,6 +12,8 @@ import { resolveCampaignRef } from "@/lib/campaigns/ref";
 import { missingParentFields, type ParentDraft } from "@/lib/intake/helpers";
 import { runMatchingForParent } from "@/lib/matching/run";
 import { parseCoordPair } from "@/lib/geo/zoneLookup";
+import { normalizeGenderPreference } from "@/lib/tutors/gender";
+import { applyRequestedTutor } from "@/lib/matching/requestedTutor";
 
 export async function POST(req: Request) {
   // Spam-flood brake (2026-10-15): 10 submissions per hour per IP.
@@ -33,6 +35,7 @@ export async function POST(req: Request) {
     budget: body.budget ? Number(body.budget) : null,
     deliveryMode: body.deliveryMode || "in_person",
     availability: Array.isArray(body.availability) ? body.availability.filter(Boolean) : null,
+    tutorGenderPreference: normalizeGenderPreference(body.tutorGenderPreference),
   };
 
   // From the Lili chat's "Share my location" button (browser geolocation).
@@ -67,6 +70,15 @@ export async function POST(req: Request) {
     await runMatchingForParent(parent.id);
   } catch (err) {
     console.error(`[public/parent-request] matching trigger failed for ${parent.id}:`, err);
+  }
+
+  // "Request this tutor" from a featured tutor's profile (2026-10-15).
+  if (body.preferredTutorId) {
+    try {
+      await applyRequestedTutor(parent.id, body.preferredTutorId);
+    } catch (err) {
+      console.error(`[public/parent-request] requested-tutor step failed for ${parent.id}:`, err);
+    }
   }
 
   return NextResponse.json({ declined: false, message: "Thanks! We'll be in touch shortly with your matches." });
