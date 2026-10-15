@@ -72,7 +72,9 @@ export default async function HomePage() {
         <div className="relative mx-auto max-w-4xl px-4 pb-20 pt-10 text-center sm:px-6 sm:pb-28 sm:pt-14">
           {/* Lili leads the hero, standing between the two calls to action
               and asking how she can help (2026-10-14). Buttons flank her on
-              wider screens and sit side by side beneath her on phones. */}
+              wider screens and sit side by side beneath her on phones; the
+              Opportunities button (2026-10-15) sits centred under her, with
+              the number of open tuitions. */}
           <div className="mx-auto grid max-w-2xl grid-cols-2 items-end gap-x-4 gap-y-6 sm:grid-cols-[1fr_auto_1fr] sm:gap-x-6">
             <div className="col-span-2 flex flex-col items-center sm:col-span-1 sm:col-start-2 sm:row-start-1">
               <div className="relative rounded-2xl border-2 border-gray-900 bg-white px-5 py-3 font-heading text-lg font-extrabold text-gray-900 shadow-[3px_3px_0_0_#1f2937] sm:text-xl">
@@ -95,6 +97,17 @@ export default async function HomePage() {
               className="justify-self-start whitespace-nowrap rounded-full border-2 border-gray-900 bg-white px-6 py-3.5 text-base font-bold text-gray-900 shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#1f2937] active:translate-y-0 active:shadow-none sm:col-start-3 sm:row-start-1 sm:mb-10 sm:px-7"
             >
               Become a tutor
+            </Link>
+            <Link
+              href="/opportunities"
+              className="col-span-2 inline-flex items-center gap-2 justify-self-center whitespace-nowrap rounded-full border-2 border-gray-900 bg-teal-300 px-6 py-3 text-base font-bold text-gray-900 shadow-[4px_4px_0_0_#1f2937] transition hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_#1f2937] active:translate-y-0 active:shadow-none sm:col-span-1 sm:col-start-2 sm:row-start-2 sm:-mt-2"
+            >
+              Opportunities
+              {listings.length > 0 && (
+                <span className="rounded-full border-2 border-gray-900 bg-white px-2 py-0.5 text-xs font-extrabold leading-none">
+                  {listings.length} open
+                </span>
+              )}
             </Link>
           </div>
           <span className="mt-14 inline-flex rotate-[-2deg] items-center gap-1.5 rounded-full border-2 border-gray-900 bg-white px-4 py-1.5 text-sm font-bold text-gray-900 shadow-[3px_3px_0_0_#1f2937]">

@@ -5,17 +5,21 @@
 // split, category filter, and an on-site "I'm interested" button (see
 // OpportunitiesClient.tsx and app/api/public/opportunity-interest).
 
+import { prisma } from "@/lib/db";
 import { getOpenOpportunityListings } from "@/lib/opportunities/digest";
 import OpportunitiesClient from "./OpportunitiesClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function OpportunitiesPage() {
-  const listings = await getOpenOpportunityListings();
+  const [listings, areas] = await Promise.all([
+    getOpenOpportunityListings(),
+    prisma.areaZone.findMany({ select: { name: true, latitude: true, longitude: true }, orderBy: { name: "asc" } }),
+  ]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
-      <OpportunitiesClient listings={listings} />
+      <OpportunitiesClient listings={listings} areas={areas} />
     </div>
   );
 }

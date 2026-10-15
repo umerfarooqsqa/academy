@@ -1,6 +1,8 @@
 "use client";
 
 // Homepage "For parents / For tutors" + "What's near you?" (2026-10-14 —
+// location handling shared with /opportunities via useNearMe/NearMeControls,
+// 2026-10-15: waiting hint, watchdog, clear errors, "or pick your area" —
 // replaces NearbyOpportunitiesWidget, and merged with the separate parent /
 // tutor pitch cards so the homepage has one pair of cards, not two). Each
 // card shows its /website-content pitch text; one opt-in location tap then
@@ -12,13 +14,13 @@
 // calculations run in the browser — the visitor's location never leaves the
 // device, and no individual tutor or parent data is involved.
 
-import { useState } from "react";
 import Link from "next/link";
 import { SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
 import type { OpportunityListing } from "@/lib/opportunities/formatText";
 import { nearbyStatus } from "@/lib/opportunities/nearby";
 import { verifiedNear, type ZoneTutorCount } from "@/lib/tutors/nearbyCounts";
-import { primaryClass } from "./liliStyles";
+import { useNearMe } from "./useNearMe";
+import NearMeControls from "./NearMeControls";
 
 const cardClass = "flex flex-col rounded-3xl border-2 border-gray-900 p-7 shadow-[5px_5px_0_0_#1f2937]";
 const ctaClass =
@@ -43,33 +45,9 @@ export default function NearYouSection({
   parentIcon: React.ReactNode;
   tutorIcon: React.ReactNode;
 }) {
-  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function checkMyArea() {
-    if (!("geolocation" in navigator)) {
-      setError("Your browser can't share location — try a different device.");
-      return;
-    }
-    setLocating(true);
-    setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-        setLocating(false);
-      },
-      (err) => {
-        setLocating(false);
-        setError(
-          err.code === err.PERMISSION_DENIED
-            ? "No problem — you can still find a tutor or browse all tuitions below."
-            : "Couldn't get your location — please try again.",
-        );
-      },
-      { enableHighAccuracy: false, timeout: 10_000 },
-    );
-  }
+  const nearMe = useNearMe();
+  const { location } = nearMe;
+  const areas = tutorCounts.map((z) => ({ name: z.name, latitude: z.latitude, longitude: z.longitude }));
 
   const totalVerified = tutorCounts.reduce((n, z) => n + z.verified, 0);
   const tutorsNear = location ? verifiedNear(tutorCounts, location.lat, location.lon) : null;
@@ -94,12 +72,12 @@ export default function NearYouSection({
         <p className="mx-auto mt-2 max-w-md text-base text-gray-600">
           One tap shows the verified tutors and open tuitions in your area — your location stays on your phone.
         </p>
-        {!location && (
-          <button type="button" className={`${primaryClass} mt-5`} onClick={checkMyArea} disabled={locating}>
-            {locating ? "Finding you…" : "📍 Check my area"}
-          </button>
-        )}
-        {error && <p className="mt-3 text-sm font-semibold text-amber-700">{error}</p>}
+        <NearMeControls
+          nearMe={nearMe}
+          areas={areas}
+          buttonLabel="📍 Check my area"
+          locatedLabel={`Showing what's near ${location?.pickedArea ?? tutorsNear?.nearestZone ?? "you"}`}
+        />
       </div>
 
       <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -135,7 +113,8 @@ export default function NearYouSection({
               </>
             ) : (
               <p className="mt-4 text-base text-gray-700">
-                We&apos;re growing in your area — tell us what you need and we&apos;ll find you the best match.
+                No verified tutors near {tutorsNear.nearestZone ?? "you"} yet — we&apos;re growing fast. Tell us what you
+                need and we&apos;ll find you the best match.
               </p>
             )
           ) : (

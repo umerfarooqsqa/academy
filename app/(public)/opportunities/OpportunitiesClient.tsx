@@ -6,7 +6,8 @@
 // POST /api/public/opportunity-interest records it for a registered tutor.
 // No parent contact info is ever shown.
 //
-// "Show tuitions near me" is opt-in browser geolocation; distance and the
+// "Show tuitions near me" is opt-in browser geolocation (or "pick your
+// area" — shared useNearMe/NearMeControls, 2026-10-15); distance and the
 // near/further split are computed in the browser (lib/opportunities/nearby.ts,
 // same within-the-zone's-maxKm rule as matching) against zone centroids — the
 // tutor's location never leaves the device.
@@ -17,6 +18,8 @@ import { SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
 import { formatOpportunityCopyText, type OpportunityListing } from "@/lib/opportunities/formatText";
 import { nearbyStatus } from "@/lib/opportunities/nearby";
 import Lili from "../Lili";
+import { useNearMe, type NearMeArea } from "../useNearMe";
+import NearMeControls from "../NearMeControls";
 import { chipActiveClass, chipClass, inputClass, linkClass, primaryClass, secondaryClass } from "../liliStyles";
 
 type Located = OpportunityListing & { near: boolean; distanceKm?: number };
@@ -32,36 +35,12 @@ function postedAgo(iso: string): string {
   return `Posted ${days} days ago`;
 }
 
-export default function OpportunitiesClient({ listings }: { listings: OpportunityListing[] }) {
-  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
+export default function OpportunitiesClient({ listings, areas }: { listings: OpportunityListing[]; areas: NearMeArea[] }) {
+  const nearMe = useNearMe();
+  const location = nearMe.location ? { lat: nearMe.location.lat, lon: nearMe.location.lon } : null;
+  const locationError = nearMe.error;
   const [group, setGroup] = useState<string>("all");
   const [showFurther, setShowFurther] = useState(false);
-
-  function findNearMe() {
-    if (!("geolocation" in navigator)) {
-      setLocationError("Your browser can't share location — here are all the open tuitions instead.");
-      return;
-    }
-    setLocating(true);
-    setLocationError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-        setLocating(false);
-      },
-      (err) => {
-        setLocating(false);
-        setLocationError(
-          err.code === err.PERMISSION_DENIED
-            ? "No problem! Here are all the open tuitions — check the area on each one."
-            : "I couldn't get your location — here are all the open tuitions instead.",
-        );
-      },
-      { enableHighAccuracy: false, timeout: 10_000 },
-    );
-  }
 
   const groups = useMemo(() => [...new Set(listings.map((l) => l.subjectGroup))], [listings]);
   const filtered = useMemo(() => (group === "all" ? listings : listings.filter((l) => l.subjectGroup === group)), [listings, group]);
@@ -77,7 +56,7 @@ export default function OpportunitiesClient({ listings }: { listings: Opportunit
 
   let line: string;
   if (listings.length === 0) line = "No open tuitions right now — register and I'll match you directly when one comes in.";
-  else if (locationError) line = locationError;
+  else if (locationError) line = "No problem — here are all the open tuitions. You can also pick your area below the button.";
   else if (!location) line = "These students need a tutor right now! Share your location and I'll show you the ones near you.";
   else if (near.length > 0)
     line = `I found ${near.length} tuition${near.length === 1 ? "" : "s"} near you! 🎉 Tap "I'm interested" on any you'd like.`;
@@ -97,18 +76,22 @@ export default function OpportunitiesClient({ listings }: { listings: Opportunit
         </div>
       </div>
 
-      <div className="mt-2 flex flex-wrap justify-center gap-3">
-        {listings.length > 0 && !location && (
-          <button type="button" className={primaryClass} onClick={findNearMe} disabled={locating}>
-            {locating ? "Finding you…" : "📍 Show tuitions near me"}
-          </button>
-        )}
-        {listings.length === 0 && (
+      {listings.length > 0 ? (
+        <div className="text-center">
+          <NearMeControls
+            nearMe={nearMe}
+            areas={areas}
+            buttonLabel="📍 Show tuitions near me"
+            locatedLabel={nearMe.location?.pickedArea ? `Showing tuitions near ${nearMe.location.pickedArea}` : "Showing tuitions near you"}
+          />
+        </div>
+      ) : (
+        <div className="mt-2 flex justify-center">
           <Link href="/become-a-tutor" className={primaryClass}>
             Become a tutor
           </Link>
-        )}
-      </div>
+        </div>
+      )}
 
       {groups.length > 1 && (
         <div className="mt-8 flex flex-wrap justify-center gap-2">
