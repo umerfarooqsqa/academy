@@ -103,13 +103,14 @@ export async function upsertTutor(opts: {
     status,
     internalNote: notes || null,
     rawMessage,
-    campaignId: campaignId ?? null,
   };
 
+  // A re-application without a campaign keeps the tutor's earlier attribution
+  // (2026-10-15 — website tracking links would otherwise be wiped).
   return prisma.tutor.upsert({
     where: { whatsappId },
-    create: { whatsappId, ...data },
-    update: data,
+    create: { whatsappId, ...data, campaignId: campaignId ?? null },
+    update: campaignId ? { ...data, campaignId } : data,
   });
 }
 

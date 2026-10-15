@@ -280,6 +280,8 @@ export default function CampaignsClient({ campaigns, zoneNames }: { campaigns: C
         </table>
       </div>
 
+      <TrackingLinks campaigns={campaigns} />
+
       <form onSubmit={create} className={`${card} mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5`}>
         <div>
           <label className={label}>Name</label>
@@ -345,6 +347,68 @@ export default function CampaignsClient({ campaigns, zoneNames }: { campaigns: C
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+// Website campaign tracking (2026-10-15, lib/campaigns/ref.ts): a visitor who
+// arrives through one of these links is remembered for 30 days, and any parent
+// request or tutor sign-up they submit is credited to the campaign — so the
+// funnel table above shows real leads, cost per lead and cost per conversion.
+function TrackingLinks({ campaigns }: { campaigns: Campaign[] }) {
+  const [origin, setOrigin] = useState("");
+  const [copied, setCopied] = useState<string | null>(null);
+  useEffect(() => setOrigin(window.location.origin), []);
+
+  async function copy(key: string, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      // clipboard unavailable — the link is visible to copy by hand
+    }
+  }
+
+  const targets = [
+    { key: "home", label: "Homepage", path: "/" },
+    { key: "parent", label: "Parent form", path: "/find-a-tutor" },
+    { key: "tutor", label: "Tutor form", path: "/become-a-tutor" },
+  ];
+
+  return (
+    <div className={`${card} mt-6`}>
+      <h2 className="text-sm font-semibold text-gray-900">Tracking links</h2>
+      <p className="mt-1 text-xs text-gray-500">
+        Use a campaign&apos;s link as the ad&apos;s destination (parent ads → Parent form, tutor ads → Tutor form). Anyone who
+        arrives through it and submits a form within 30 days is credited to that campaign in the table above.
+      </p>
+      <p className="mt-2 rounded bg-blue-50 p-2 text-xs text-blue-900">
+        <strong>Meta ads shortcut:</strong> use <code className="font-mono">{origin}/find-a-tutor</code> (or{" "}
+        <code className="font-mono">/become-a-tutor</code>) as the website URL and put{" "}
+        <code className="font-mono">{"ref={{ad.id}}"}</code> in the ad&apos;s <em>URL parameters</em>. Then paste each
+        ad&apos;s ID into that campaign&apos;s <em>Meta ad ID</em> — leads are matched automatically.
+      </p>
+      {campaigns.length === 0 ? (
+        <p className="mt-3 text-sm text-gray-500">Create a campaign above to get its tracking links.</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-gray-100">
+          {campaigns.map((c) => (
+            <li key={c.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+              <span className="mr-2 min-w-40 font-medium text-gray-900">{c.name}</span>
+              {targets.map((t) => {
+                const url = `${origin}${t.path}?ref=${c.id}`;
+                const key = `${c.id}-${t.key}`;
+                return (
+                  <button key={t.key} className={btnSecondary} title={url} onClick={() => copy(key, url)}>
+                    {copied === key ? "Copied!" : `Copy ${t.label} link`}
+                  </button>
+                );
+              })}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

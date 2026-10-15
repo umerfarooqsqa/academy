@@ -7,6 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { createParentRequest, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
+import { resolveCampaignRef } from "@/lib/campaigns/ref";
 import { missingParentFields, type ParentDraft } from "@/lib/intake/helpers";
 import { runMatchingForParent } from "@/lib/matching/run";
 import { parseCoordPair } from "@/lib/geo/zoneLookup";
@@ -52,6 +53,8 @@ export async function POST(req: Request) {
     whatsappId,
     draft,
     rawMessage: "(submitted via website)",
+    // Campaign tracking link the visitor arrived through, if any (2026-10-15).
+    campaignId: await resolveCampaignRef(body.campaignRef),
     status: "pending",
   });
 

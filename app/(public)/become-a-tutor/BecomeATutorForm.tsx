@@ -9,12 +9,16 @@ import type { ZonePoint } from "@/lib/geo/zoneLookup";
 import LiliForm, { type SubmitResult } from "../LiliForm";
 import type { Answers } from "../liliFormFlow";
 import { TUTOR_STEPS, buildTutorFormData } from "./tutorSteps";
+import { getCampaignRef } from "../campaignRef";
 
 async function submit(answers: Answers): Promise<SubmitResult> {
-  const res = await fetch("/api/public/tutor-apply", { method: "POST", body: buildTutorFormData(answers) });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) return { ok: false, error: body.error ?? "Something went wrong — please try again." };
-  return { ok: true, declined: Boolean(body.declined), message: body.message };
+  const body = buildTutorFormData(answers);
+  const campaignRef = getCampaignRef();
+  if (campaignRef) body.append("campaignRef", campaignRef);
+  const res = await fetch("/api/public/tutor-apply", { method: "POST", body });
+  const result = await res.json().catch(() => ({}));
+  if (!res.ok) return { ok: false, error: result.error ?? "Something went wrong — please try again." };
+  return { ok: true, declined: Boolean(result.declined), message: result.message };
 }
 
 export default function BecomeATutorForm({ zones }: { zones: ZonePoint[] }) {

@@ -14,6 +14,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { upsertTutor, recordTutorDocument, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
+import { resolveCampaignRef } from "@/lib/campaigns/ref";
 import { missingTutorFields, type TutorDraft } from "@/lib/intake/helpers";
 import { extensionForMime, buildDocumentStoragePath } from "@/lib/intake/documents";
 import { uploadToSupabaseStorage } from "@/lib/storage/supabase";
@@ -82,6 +83,8 @@ export async function POST(req: Request) {
     whatsappId,
     draft,
     rawMessage: "(submitted via website)",
+    // Campaign tracking link the visitor arrived through, if any (2026-10-15).
+    campaignId: await resolveCampaignRef(form.get("campaignRef")),
     status: "pending",
   });
 

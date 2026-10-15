@@ -16,6 +16,7 @@ import { Baloo_2 } from "next/font/google";
 import type { Metadata } from "next";
 import { getSiteContent } from "@/lib/siteContent";
 import MobileNav from "./MobileNav";
+import CampaignRefCapture from "./CampaignRefCapture";
 
 const headingFont = Baloo_2({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-heading" });
 
@@ -75,6 +76,8 @@ export default async function PublicLayout({ children }: { children: React.React
         </div>
       </header>
 
+      {/* Remembers a campaign tracking link's ?ref= (lib/campaigns/ref.ts). */}
+      <CampaignRefCapture />
       <main className="flex-1">{children}</main>
 
       <footer className="border-t-2 border-gray-900/5 py-8">

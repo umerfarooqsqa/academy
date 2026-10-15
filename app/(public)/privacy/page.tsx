@@ -62,6 +62,11 @@ export default async function PrivacyPage() {
         <p>
           <strong>Messages you send us on WhatsApp</strong>, so we can understand your request and reply.
         </p>
+        <p>
+          <strong>Which ad or link brought you to us</strong>, if you arrived through one of our campaign links. This is
+          remembered only on your own device for 30 days and contains no personal information — it just tells us which
+          adverts are working.
+        </p>
       </Section>
 
       <Section title="How we use it">

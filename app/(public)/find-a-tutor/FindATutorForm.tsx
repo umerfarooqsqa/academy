@@ -10,12 +10,13 @@ import type { Answers } from "../liliFormFlow";
 import { useMemo } from "react";
 import type { ZoneTutorCount } from "@/lib/tutors/nearbyCounts";
 import { makeParentSteps, buildParentPayload } from "./parentSteps";
+import { getCampaignRef } from "../campaignRef";
 
 async function submit(answers: Answers): Promise<SubmitResult> {
   const res = await fetch("/api/public/parent-request", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(buildParentPayload(answers)),
+    body: JSON.stringify({ ...buildParentPayload(answers), campaignRef: getCampaignRef() }),
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) return { ok: false, error: body.error ?? "Something went wrong — please try again." };
