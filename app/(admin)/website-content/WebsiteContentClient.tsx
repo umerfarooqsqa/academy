@@ -66,6 +66,15 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
         />
       </div>
       <div>
+        <label className={label}>Google Business Place ID (shows your live Google rating and reviews on the homepage)</label>
+        <input
+          className={input}
+          placeholder="e.g. ChIJN1t_tDeuEmsRUsoyG83frY4 — leave empty to hide the section"
+          value={content.googlePlaceId}
+          onChange={(e) => setContent({ ...content, googlePlaceId: e.target.value })}
+        />
+      </div>
+      <div>
         <label className={label}>Eyebrow badge (small text above the headline)</label>
         <input className={input} value={content.heroEyebrow} onChange={(e) => setContent({ ...content, heroEyebrow: e.target.value })} />
       </div>

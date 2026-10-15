@@ -92,6 +92,7 @@ export default async function PrivacyPage() {
           <li>Meta (WhatsApp and Facebook) — messaging you, and posting tuition listings to our Page</li>
           <li>Groq and Google (Gemini) — automatically reading WhatsApp messages to fill in your request</li>
           <li>JazzCash — processing tuition payments</li>
+          <li>Google — showing our public Google Business rating and reviews on our homepage</li>
         </ul>
         <p>We may also share information if the law requires it.</p>
       </Section>

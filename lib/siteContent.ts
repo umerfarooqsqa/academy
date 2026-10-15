@@ -20,6 +20,9 @@ export interface SiteContent {
   testimonials: { name: string; quote: string }[];
   /** Shown on /privacy as the address for data requests and questions (2026-10-15). */
   contactEmail: string;
+  /** Google Business Profile Place ID — enables the live Google rating/reviews
+   * section on the homepage (lib/google/reviews.ts, 2026-10-15). Empty = hidden. */
+  googlePlaceId: string;
 }
 
 // Copy keeps the real substance of CLAUDE.md Section 11's brand positioning
@@ -44,6 +47,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     "Teach students near you, not across town. Less commuting, more teaching — matched to the subjects you're actually great at.",
   testimonials: [],
   contactEmail: "",
+  googlePlaceId: "",
 };
 
 export async function getSiteContent(): Promise<SiteContent> {

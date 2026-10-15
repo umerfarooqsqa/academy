@@ -12,6 +12,8 @@
 import Link from "next/link";
 import { getSiteContent } from "@/lib/siteContent";
 import NearYouSection from "./NearYouSection";
+import GoogleReviewsSection from "./GoogleReviewsSection";
+import { getGoogleReviews } from "@/lib/google/reviews";
 import { getOpenOpportunityListings } from "@/lib/opportunities/digest";
 import { getVerifiedTutorCounts } from "@/lib/tutors/verified";
 import Lili from "./Lili";
@@ -55,10 +57,11 @@ const STEPS = [
 ];
 
 export default async function HomePage() {
-  const [content, listings, tutorCounts] = await Promise.all([
+  const [content, listings, tutorCounts, googleReviews] = await Promise.all([
     getSiteContent(),
     getOpenOpportunityListings(),
     getVerifiedTutorCounts(),
+    getGoogleReviews(),
   ]);
 
   return (
@@ -170,6 +173,9 @@ export default async function HomePage() {
         parentIcon={<SearchIcon />}
         tutorIcon={<MatchIcon />}
       />
+
+      {/* Live Google rating + reviews (hidden until a Place ID is set) */}
+      <GoogleReviewsSection data={googleReviews} />
 
       {/* Testimonials */}
       {content.testimonials.length > 0 && (
