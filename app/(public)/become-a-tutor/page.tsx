@@ -13,7 +13,8 @@ import { checkDot, container, eyebrow } from "../ui";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Become a tutor",
+  alternates: { canonical: "/become-a-tutor" },
+  title: "Become a Tutor — Tuition Jobs in Karachi",
   description: "Register free and get matched with students close to you — save on travel time and fuel cost.",
 };
 
@@ -28,7 +29,7 @@ export default async function BecomeATutorPage() {
       <div className={`${container} max-w-2xl py-12 sm:py-16`}>
         <div className="text-center">
           <p className={eyebrow}>Become a tutor</p>
-          <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Teach students near you</h1>
+          <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Become a tutor — teach students near you</h1>
           <p className="mx-auto mt-3 max-w-md text-base text-slate-600">
             Get matched with students close to you — save on travel time and fuel cost.
           </p>

@@ -18,11 +18,17 @@ export default function FindATutorForm({
   zones,
   tutorCounts,
   initialGroup,
+  initialArea,
+  initialMode,
   requestedTutor,
 }: {
   zones: ZonePoint[];
   tutorCounts: ZoneTutorCount[];
   initialGroup?: string;
+  /** An AreaZone name from an area landing page (?area=). */
+  initialArea?: string;
+  /** "online" from /online-tuition (?mode=online). */
+  initialMode?: "online";
   requestedTutor?: { id: string; name: string };
 }) {
   const steps = useMemo(
@@ -35,8 +41,10 @@ export default function FindATutorForm({
   const initialAnswers = useMemo<Answers>(() => {
     const a: Answers = {};
     if (initialGroup) a.subjectGroup = initialGroup;
+    if (initialMode) a.deliveryMode = initialMode;
+    if (initialArea) a.location = { latitude: null, longitude: null, area: initialArea, viaGps: false };
     return a;
-  }, [initialGroup]);
+  }, [initialGroup, initialMode, initialArea]);
 
   async function submit(answers: Answers): Promise<SubmitResult> {
     const res = await fetch("/api/public/parent-request", {

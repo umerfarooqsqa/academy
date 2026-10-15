@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import type { Faq } from "@/lib/siteContent";
-import { findTutorHref, type PublicSubject, type SubjectIconKey } from "@/lib/publicSubjects";
+import { findTutorHref, subjectPath, type PublicSubject, type SubjectIconKey } from "@/lib/publicSubjects";
 import { ArrowRightIcon, BookIcon, CapIcon, ChevronDownIcon, CodeIcon, FlaskIcon, GlobeIcon, SparkIcon } from "./icons";
 import { btnGhostLight, btnLight, cardHover, container, eyebrow, h2 } from "./ui";
 
@@ -72,7 +72,12 @@ export function SubjectCard({ subject, detailed = false }: { subject: PublicSubj
       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${subject.tint}`}>
         <Icon className="h-6 w-6" />
       </div>
-      <h3 className="mt-5 font-heading text-lg font-semibold text-slate-900">{subject.title}</h3>
+      {/* Title links to the subject's own landing page (SEO, 2026-10-15). */}
+      <h3 className="mt-5 font-heading text-lg font-semibold text-slate-900">
+        <Link href={subjectPath(subject)} className="hover:text-rose-600">
+          {subject.title}
+        </Link>
+      </h3>
       <p className="mt-1 text-sm font-medium text-slate-500">{subject.levels}</p>
       <p className="mt-3 text-sm leading-relaxed text-slate-600">{subject.description}</p>
       {detailed && (

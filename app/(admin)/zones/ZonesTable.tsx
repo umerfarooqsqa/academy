@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { card, table, th, td, input, label, btnPrimary, btnDanger, btnSecondary } from "@/app/components/ui";
+import { areaPath } from "@/lib/seo/areas";
 
 interface Zone {
   id: string;
@@ -10,6 +11,8 @@ interface Zone {
   latitude: number;
   longitude: number;
   maxKm: number;
+  /** Optional local intro on the public area page (SEO, 2026-10-15). */
+  description: string | null;
 }
 
 export default function ZonesTable({ zones }: { zones: Zone[] }) {
@@ -89,7 +92,8 @@ export default function ZonesTable({ zones }: { zones: Zone[] }) {
           <tbody>
             {zones.map((z) =>
               editingId === z.id ? (
-                <tr key={z.id}>
+                <Fragment key={z.id}>
+                <tr>
                   <td className={td}>
                     <input className={input} value={editDraft.name ?? ""} onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })} />
                   </td>
@@ -125,9 +129,29 @@ export default function ZonesTable({ zones }: { zones: Zone[] }) {
                     </div>
                   </td>
                 </tr>
+                <tr>
+                  <td className={td} colSpan={5}>
+                    <label className={label}>
+                      Intro for the public page {areaPath(z.name)} (optional — a few sentences about tuition in this area; blank line =
+                      new paragraph)
+                    </label>
+                    <textarea
+                      className={`${input} h-24`}
+                      value={editDraft.description ?? ""}
+                      onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value })}
+                    />
+                  </td>
+                </tr>
+                </Fragment>
               ) : (
                 <tr key={z.id}>
-                  <td className={`${td} font-medium text-gray-900`}>{z.name}</td>
+                  <td className={`${td} font-medium text-gray-900`}>
+                    {z.name}
+                    <a href={areaPath(z.name)} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs font-normal text-blue-600 hover:underline">
+                      page ↗
+                    </a>
+                    {z.description && <span className="ml-2 text-xs font-normal text-gray-500">· has intro</span>}
+                  </td>
                   <td className={td}>{z.latitude}</td>
                   <td className={td}>{z.longitude}</td>
                   <td className={td}>{z.maxKm} km</td>

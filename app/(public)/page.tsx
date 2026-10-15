@@ -10,6 +10,7 @@
 // only the ones the operator confirmed: free demo class, home and online,
 // male and female tutors, every class from primary to university.
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getSiteContent, internationalDigits } from "@/lib/siteContent";
 import { getGoogleReviews } from "@/lib/google/reviews";
@@ -18,6 +19,8 @@ import { getVerifiedTutorCounts } from "@/lib/tutors/verified";
 import { getFeaturedTutors } from "@/lib/tutors/publicProfile";
 import { getPublicStats } from "@/lib/publicStats";
 import { PUBLIC_SUBJECTS } from "@/lib/publicSubjects";
+import { prisma } from "@/lib/db";
+import { areaPath } from "@/lib/seo/areas";
 import Reveal from "./Reveal";
 import NearYouSection from "./NearYouSection";
 import GoogleReviewsSection from "./GoogleReviewsSection";
@@ -47,6 +50,8 @@ import { btnPrimary, btnSecondary, card, checkDot, container, eyebrow, sectionY 
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
 const TRUST = ["Free demo class", "ID-checked tutors", "Home & online", "Male & female tutors"];
 
 const WHY = [
@@ -61,13 +66,14 @@ const WHY = [
 const STEP_ICONS = [SearchIcon, UsersIcon, PointerIcon, CalendarIcon, RocketIcon];
 
 export default async function HomePage() {
-  const [content, listings, tutorCounts, googleReviews, featured, stats] = await Promise.all([
+  const [content, listings, tutorCounts, googleReviews, featured, stats, zones] = await Promise.all([
     getSiteContent(),
     getOpenOpportunityListings(),
     getVerifiedTutorCounts(),
     getGoogleReviews(),
     getFeaturedTutors(),
     getPublicStats(),
+    prisma.areaZone.findMany({ select: { name: true }, orderBy: { name: "asc" } }),
   ]);
   const parentFaqs = content.faqs.filter((f) => f.audience === "parent").slice(0, 6);
   const whatsapp = content.whatsappNumber ? internationalDigits(content.whatsappNumber) : "";
@@ -186,6 +192,37 @@ export default async function HomePage() {
           </Link>
         </p>
       </section>
+
+      {/* Find a tutor in your area — links to every area page (SEO, 2026-10-15). */}
+      {zones.length > 0 && (
+        <section className="border-y border-slate-200 bg-white">
+          <div className={`${container} py-12`}>
+            <h2 className="text-center font-heading text-2xl font-bold text-slate-900">Find a tutor in your area of Karachi</h2>
+            <ul className="mt-6 flex flex-wrap justify-center gap-2.5">
+              {zones.map((z) => (
+                <li key={z.name}>
+                  <Link
+                    href={areaPath(z.name)}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-rose-50 hover:text-rose-700 hover:ring-rose-200"
+                  >
+                    <PinIcon className="h-4 w-4 text-slate-400" />
+                    Tutors in {z.name}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link
+                  href="/online-tuition"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 transition hover:bg-rose-50 hover:text-rose-700 hover:ring-rose-200"
+                >
+                  <MonitorIcon className="h-4 w-4 text-slate-400" />
+                  Online tuition — anywhere
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </section>
+      )}
 
       {/* Why parents choose us */}
       <section className="bg-slate-50">

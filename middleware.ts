@@ -27,6 +27,15 @@ const PUBLIC_PATHS = [
   "/contact",
   "/terms", // Terms & Conditions — content edited in /website-content
   "/our-tutors", // featured tutors list + /our-tutors/[id] profiles
+  // SEO + GEO (2026-10-15): crawler files, landing pages and the blog.
+  "/robots.txt",
+  "/sitemap.xml",
+  "/llms.txt",
+  "/about",
+  "/blog",
+  "/tutors-in-karachi",
+  "/online-tuition",
+  "/home-tuition",
   "/lili", // mascot images (public/lili/) shown in the public site's navbar
   "/brand", // logo files (public/brand/, 2026-10-15)
   "/icon.png", // browser-tab icon (app/icon.png)

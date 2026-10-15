@@ -13,6 +13,7 @@ import { container, textLink } from "../ui";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "Terms & Conditions",
   description: "The terms for families and tutors using our tutor-matching service.",
 };

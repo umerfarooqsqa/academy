@@ -146,6 +146,19 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
           value={content.googlePlaceId}
           onChange={(v) => set("googlePlaceId", v)}
         />
+        <Field
+          title="Google Search Console verification code"
+          hint='from Search Console → "HTML tag": paste only the content="…" value'
+          placeholder="e.g. a1B2c3D4e5…"
+          value={content.googleSiteVerification}
+          onChange={(v) => set("googleSiteVerification", v.replace(/^.*content="([^"]+)".*$/s, "$1").trim())}
+        />
+        <Field
+          title="Bing Webmaster Tools verification code"
+          hint='the msvalidate.01 content="…" value'
+          value={content.bingSiteVerification}
+          onChange={(v) => set("bingSiteVerification", v.replace(/^.*content="([^"]+)".*$/s, "$1").trim())}
+        />
       </Group>
 
       <Group title="Homepage">

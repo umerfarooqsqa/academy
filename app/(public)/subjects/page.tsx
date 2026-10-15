@@ -13,9 +13,10 @@ import { card, container, sectionY } from "../ui";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Subjects we teach",
+  alternates: { canonical: "/subjects" },
+  title: "Tutors for Every Subject & Class",
   description:
-    "Home and online tutors for every class: primary and Matric, O and A-levels, FSc pre-medical and pre-engineering, Computer Science, skills and university subjects.",
+    "Home and online tutors for every class: primary, Matric, O/A-levels, FSc, Computer Science, skills and university — ID-checked, free demo class.",
 };
 
 const MODES = [
@@ -29,7 +30,7 @@ export default function SubjectsPage() {
     <>
       <PageHeader
         kicker="Subjects"
-        title="What we teach"
+        title="Tutors for every subject and class"
         intro="Every class from primary school to university. Each tutor is matched by the grades they achieved in the very subjects you need."
       />
       <section className={`${container} ${sectionY}`}>

@@ -13,6 +13,7 @@ import { btnPrimary, chip, chipActive, container } from "../ui";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/our-tutors" },
   title: "Our tutors",
   description: "Meet some of our ID-checked, grade-verified home and online tutors.",
 };

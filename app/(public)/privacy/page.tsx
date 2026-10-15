@@ -11,7 +11,7 @@ import { getSiteContent } from "@/lib/siteContent";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Privacy Policy" };
+export const metadata: Metadata = { title: "Privacy Policy", alternates: { canonical: "/privacy" } };
 
 const EFFECTIVE_DATE = "15 October 2026";
 

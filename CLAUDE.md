@@ -221,6 +221,19 @@ model AreaZone {
   latitude  Float
   longitude Float
   maxKm     Float  @default(6) // max distance for a Tier B match involving this zone (6.3 Step 2)
+  description String? // 2026-10-15: optional intro on its public page /tutors-in-karachi/<area> (SEO)
+}
+
+model Article {   // 2026-10-15: blog at /blog (SEO + GEO) — RLS enabled
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  description String    // meta description
+  body        String    // lib/richText.ts format, never HTML
+  status      String    @default("draft") // draft | published
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Match {
@@ -608,6 +621,15 @@ Keep every page functional and plain — Tailwind utility styling only, no heavy
 - **Mobile menu**: a drawer sliding in from the right (`app/(public)/MobileNav.tsx`, portalled to `<body>` because the header's backdrop-blur would trap a fixed element), current page highlighted, both CTAs + WhatsApp at the bottom; closes on link tap, backdrop, ✕ or Escape.
 - **Gender**: tutor form asks Female/Male; parent form asks No preference/Female/Male; admin sets it on `/tutors/[id]`; matching rule in 6.3 Step 1. **School category**: `school` added to `lib/subjectGroups.ts` (flows to forms, LLM schema/prompt enum, admin filters, heat map).
 
+**Deviation, 2026-10-15 — SEO + GEO (search engines and AI assistants).** Operator request; target keywords "tutor", "tuition", "tutor academy", "tutor in Karachi", "tutor in Pakistan", "online tuition". Operator decisions: GEO means both local search and AI answers; online tuition is offered to students anywhere in Pakistan **and abroad** (home tuition stays Karachi-only); no Google Business Profile yet (operator to create one as a service-area business, no public address); domain to be bought later; blog with 4 starter guides; landing pages for Karachi + each area, online, home tuition, each subject level.
+- **Crawler files**: `app/robots.ts` (all public pages allowed; admin, login and `/api/` disallowed — note `/tutors$` + `/tutors/`, never plain `/tutors`, which would prefix-block `/tutors-in-karachi`; AI crawlers GPTBot, OAI-SearchBot, ChatGPT-User, PerplexityBot, ClaudeBot, Claude-SearchBot, Google-Extended, Applebot-Extended, Bingbot explicitly allowed), `app/sitemap.ts` (static pages + every area, subject page, featured tutor and published article), `app/llms.txt/route.ts` (plain-text facts for AI assistants, built from live content). Route lists in `lib/seo/routes.ts`. All three are in `middleware.ts` PUBLIC_PATHS and are `force-dynamic` (CI builds have no database).
+- **Noindex**: `app/(admin)/layout.tsx` and `app/login/layout.tsx` set `robots: noindex, nofollow`.
+- **Metadata**: the public layout sets `metadataBase` from `lib/site.ts#PUBLIC_SITE_URL` (**the one-line domain switch** — add a redirect from the workers.dev address when moving), title template `%s | <site name>`, en_PK Open Graph with `public/brand/og-default.png` (static 1200×630 PNG — `next/og` deliberately not used: its WASM bloats the free-plan Worker), Search Console / Bing verification tags from `SiteContent.googleSiteVerification` / `bingSiteVerification` (edited in `/website-content`). Every public page sets `alternates.canonical`. The default homepage H1 is now keyword-led ("Home & online tutors in Karachi — the right tutor, close to you"; old default auto-upgraded via `OLD_DEFAULTS`) and the default meta description mentions Karachi, online tuition, Pakistan and abroad.
+- **Structured data** (`lib/seo/jsonLd.ts`, rendered by `app/(public)/JsonLd.tsx`): site-wide `EducationalOrganization`+`LocalBusiness` (service-area, `areaServed` = Karachi + each zone + Pakistan, **no street address**, contact from site content, Facebook in `sameAs`) and `WebSite`; landing pages add `Service`, `BreadcrumbList`, `FAQPage`; featured tutors `ProfilePage`/`Person`; articles `BlogPosting`. **Never add `AggregateRating`/`Review` markup** (self-published ratings aren't eligible and risk a penalty).
+- **Landing pages** (shared blocks `app/(public)/landing.tsx`; each opens with a keyword H1 and a direct-answer paragraph AI assistants can quote, then real data, FAQs, internal links): `/tutors-in-karachi`; `/tutors-in-karachi/<area>` — one per AreaZone (slug via `lib/seo/areas.ts`, new zones get a page automatically, unknown slug 404) with live verified-tutor counts, open tuitions near it, nearby areas (within the zone's own maxKm — falls back to the 3 closest as "Other areas"), featured tutors there and the operator's optional intro (`AreaZone.description`, edited on `/zones`); `/online-tuition`; `/home-tuition`; `/subjects/<slug>` (content in `lib/publicSubjects.ts`: `slug`, `seoTitle`, `metaDescription`, `intro`, `faqs`); `/about` (plain facts mirroring the real matching/verification rules — keep it true). **Rule: no thin doorway pages** — every page must carry real data or genuinely different content. `/find-a-tutor` accepts `?area=<zone>` and `?mode=online` to pre-fill those answers. Header nav leads with Tutors in Karachi / Online tuition; footer links every landing page; homepage has a "Find a tutor in your area" strip.
+- **Blog**: `Article` model (migration `20261015200000_seo_articles_area_description`, **RLS enabled**), staff editor `/articles` (admin nav "Blog"; `GET/POST /api/articles`, `PATCH/DELETE /api/articles/[id]`, validated by `lib/articles.ts#parseArticleInput`), public `/blog` and `/blog/<slug>` (drafts 404, never in the sitemap or llms.txt). Body format `lib/richText.ts`: `##`/`###` headings, paragraphs, `- ` and `1.` lists, `**bold**`, `[text](/link)` — rendered as text, never HTML; only relative or http(s) links. 4 starter guides were published to production on 2026-10-15 (general advice, no prices).
+- **Entity consistency (GEO)**: the site uses "Lili Tutor Academy" everywhere; the Facebook Page is still named "Lili Learn" — recommended to the operator to rename it.
+
 ## 8. API routes (Next.js App Router `app/api/...`)
 
 - `POST /api/whatsapp/webhook` — inbound WhatsApp messages (Meta verification handshake + message handling)
@@ -629,6 +651,7 @@ Keep every page functional and plain — Tailwind utility styling only, no heavy
 - `POST /api/matches/check-notification-delay` — periodic route (called on a simple schedule, no queue service) that checks unclaimed opportunities past their free-tier delay window and triggers the free-tutor notification per 6.5 step 3
 - `POST /api/public/parent-request`, `POST /api/public/tutor-apply` — **new, 2026-10-13 deviation (see Section 7)**: public, unauthenticated. Back the `/find-a-tutor` and `/become-a-tutor` web forms — same pipeline as every other intake path, no LLM call needed since the form already gives structured fields
 - `GET/POST /api/website-content` — authenticated (staff), backs `/website-content`'s CMS editor
+- `GET/POST /api/articles`, `PATCH/DELETE /api/articles/:id` — **2026-10-15**: staff session; blog articles for `/blog` (see the SEO + GEO note in Section 7). `PATCH /api/zones/:id` also accepts `description` (the area page intro)
 - `POST/DELETE /api/tutors/:id/photo` — **2026-10-15**: staff session; featured-tutor photo upload to the public `tutor-photos` bucket (see Section 7 note). `PATCH /api/tutors/:id` also accepts `gender` and the public-profile fields (`featured`, `gradesVerified`, `profileHeadline`, `profileBio`, `yearsExperience`, `profileExperience`, `profileEducation` — validated by `lib/tutors/publicProfile.ts#parsePublicProfilePatch`)
 
 ## 9. Environment variables

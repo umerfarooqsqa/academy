@@ -188,6 +188,23 @@ model AreaZone {
   latitude  Float
   longitude Float
   maxKm     Float  @default(6) // max distance for a Tier B match involving this zone (6.3 Step 2)
+  // Optional local intro shown on this area's public page,
+  // /tutors-in-karachi/<area> (SEO, 2026-10-15) — written by the operator on /zones.
+  description String?
+}
+
+// Blog / guides at /blog (SEO + GEO, 2026-10-15) — written by staff on
+// /articles. Body is plain text in the lib/richText.ts format (never HTML).
+model Article {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  description String    // meta description / summary, ~160 chars
+  body        String
+  status      String    @default("draft") // draft | published
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Match {

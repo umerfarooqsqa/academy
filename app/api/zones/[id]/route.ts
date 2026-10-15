@@ -7,6 +7,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const editable = ["name", "latitude", "longitude", "maxKm"] as const;
   const data: Record<string, unknown> = {};
   for (const f of editable) if (f in body) data[f] = body[f];
+  // Optional intro on the public area page (SEO, 2026-10-15) — plain text, capped.
+  if ("description" in body) {
+    const d = typeof body.description === "string" ? body.description.trim().slice(0, 3000) : "";
+    data.description = d || null;
+  }
   const zone = await prisma.areaZone.update({ where: { id }, data });
   return NextResponse.json({ zone });
 }

@@ -13,6 +13,7 @@ import { card, cardHover, container } from "../ui";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/contact" },
   title: "Contact us",
   description: "Get in touch on WhatsApp, by phone or email — or request a tutor online in two minutes.",
 };

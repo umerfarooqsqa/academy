@@ -53,6 +53,10 @@ export interface SiteContent {
   /** Google Business Profile Place ID — enables the live Google rating/reviews
    * section on the homepage (lib/google/reviews.ts, 2026-10-15). Empty = hidden. */
   googlePlaceId: string;
+  /** Google Search Console "HTML tag" verification code (content="…" part). Empty = no tag. */
+  googleSiteVerification: string;
+  /** Bing Webmaster Tools msvalidate.01 code. Empty = no tag. */
+  bingSiteVerification: string;
   /** Facebook Page link shown in the public footer (2026-10-15). Empty = hidden. */
   facebookUrl: string;
   /** /terms — Terms & Conditions sections (2026-10-15). Body format: lib/legalText.ts. */
@@ -68,9 +72,11 @@ export interface SiteContent {
 export const DEFAULT_SITE_CONTENT: SiteContent = {
   siteName: "Lili Tutor Academy",
   heroEyebrow: "Verified tutors from your own neighbourhood",
-  heroHeadline: "The right tutor is closer than you think.",
+  // Keyword-led H1 (SEO, 2026-10-15 — "tutor", "Karachi", "online").
+  heroHeadline: "Home & online tutors in Karachi — the right tutor, close to you",
+  // Meta description (≤160 chars) — not shown on the page.
   heroSubheadline:
-    "Home and online tutors for every class — primary, Matric, O/A-levels, FSc, Computer Science, skills and university — ID-checked, grade-verified and from your own area. Your first demo class is free.",
+    "ID-checked home tutors in Karachi and online tuition across Pakistan and abroad — O/A-levels, Matric, FSc and more. Your first demo class is free.",
   howItWorksSteps: [
     {
       title: "Tell us what you need",
@@ -166,24 +172,30 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   serviceArea: "Karachi",
   footerTagline: "Verified home and online tutors from your own neighbourhood.",
   googlePlaceId: "",
+  googleSiteVerification: "",
+  bingSiteVerification: "",
   facebookUrl: "https://www.facebook.com/Lilitutoracademy/",
   terms: DEFAULT_TERMS,
   termsUpdatedOn: "2026-10-15",
 };
 
-// Values that were the defaults before the 2026-10-15 redesign: a saved copy
-// still holding one of these was never edited, so it gets the new default.
-const OLD_DEFAULTS: Partial<Record<keyof SiteContent, string>> = {
-  heroSubheadline:
+// Values that were defaults before (the 2026-10-15 redesign and SEO work): a
+// saved copy still holding one of these was never edited, so it gets the
+// current default.
+const OLD_DEFAULTS: Partial<Record<keyof SiteContent, string[]>> = {
+  heroSubheadline: [
     "We match you with vetted, grade-verified tutors for O/A-levels, FSc, Computer Science, Skills, and university subjects — right from your own area, usually within hours.",
+    "Home and online tutors for every class — primary, Matric, O/A-levels, FSc, Computer Science, skills and university — ID-checked, grade-verified and from your own area. Your first demo class is free.",
+  ],
+  heroHeadline: ["The right tutor is closer than you think."],
 };
 
 /** Saved JSON (possibly from an older version) → complete SiteContent. Pure. */
 export function normalizeSiteContent(parsed: Record<string, unknown>): SiteContent {
   const merged = { ...DEFAULT_SITE_CONTENT, ...parsed } as SiteContent & { howItWorks?: unknown };
-  for (const [key, old] of Object.entries(OLD_DEFAULTS)) {
+  for (const [key, olds] of Object.entries(OLD_DEFAULTS)) {
     const k = key as keyof SiteContent;
-    if (merged[k] === old) (merged as unknown as Record<string, unknown>)[k] = DEFAULT_SITE_CONTENT[k];
+    if (olds?.includes(merged[k] as string)) (merged as unknown as Record<string, unknown>)[k] = DEFAULT_SITE_CONTENT[k];
   }
   // The old 3-step `howItWorks: string[]` is retired in favour of the titled
   // 5-step flow (the saved steps were never edited — 2026-10-15).

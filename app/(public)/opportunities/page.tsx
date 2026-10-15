@@ -13,7 +13,8 @@ import OpportunitiesClient from "./OpportunitiesClient";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Tuition jobs",
+  alternates: { canonical: "/opportunities" },
+  title: "Tuition Jobs in Karachi & Online",
   description: "Open home and online tuitions near you. Registered tutors can tap “I'm interested” to apply.",
 };
 

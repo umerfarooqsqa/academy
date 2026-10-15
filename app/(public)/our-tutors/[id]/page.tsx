@@ -9,6 +9,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublicTutorProfile } from "@/lib/tutors/publicProfile";
+import { breadcrumbLd, tutorProfileLd } from "@/lib/seo/jsonLd";
+import JsonLd from "../../JsonLd";
 import { BadgeCheckIcon, BriefcaseIcon, CapIcon, CheckIcon, GiftIcon, PinIcon } from "../../icons";
 import { TutorAvatar, RatingLine, VerifiedBadges, deliveryLabel, groupLabel } from "../TutorCard";
 import { btnPrimary, card, checkDot, container } from "../../ui";
@@ -24,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${t.displayName} — ${t.subjects.slice(0, 3).join(", ")} tutor`,
     description: t.headline ?? `${groupLabel(t.subjectGroup)} tutor in ${t.area}. ID-checked by our team.`,
+    alternates: { canonical: `/our-tutors/${t.id}` },
   };
 }
 
@@ -36,6 +39,14 @@ export default async function TutorProfilePage({ params }: Props) {
 
   return (
     <div className="bg-slate-50">
+      <JsonLd data={tutorProfileLd(t)} />
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Home", path: "/" },
+          { name: "Our tutors", path: "/our-tutors" },
+          { name: t.displayName, path: `/our-tutors/${t.id}` },
+        ])}
+      />
       <div className={`${container} py-8 sm:py-12`}>
         <Link href="/our-tutors" className="text-sm font-medium text-slate-500 hover:text-slate-900">
           ← All tutors

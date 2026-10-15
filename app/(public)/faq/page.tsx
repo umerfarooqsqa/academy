@@ -10,6 +10,7 @@ import { container, eyebrow, textLink } from "../ui";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/faq" },
   title: "Frequently asked questions",
   description: "How matching works, the free demo class, fees, verification, home and online tuition, and becoming a tutor.",
 };
