@@ -29,7 +29,7 @@ export interface Faq {
 export interface SiteContent {
   siteName: string;
   heroHeadline: string;
-  /** Shown under the homepage headline, and as the description in Google results/link previews. */
+  /** The description in Google results/link previews — not shown on the page (2026-10-15). */
   heroSubheadline: string;
   heroEyebrow: string;
   howItWorksSteps: HowItWorksStep[];

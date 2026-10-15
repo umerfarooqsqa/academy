@@ -149,8 +149,8 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
         <Field title="Badge above the headline" value={content.heroEyebrow} onChange={(v) => set("heroEyebrow", v)} />
         <Field title="Headline" value={content.heroHeadline} onChange={(v) => set("heroHeadline", v)} />
         <Field
-          title="Text under the headline"
-          hint="also the description in Google results and link previews"
+          title="Site description"
+          hint="shown in Google results and link previews, not on the page"
           multiline
           value={content.heroSubheadline}
           onChange={(v) => set("heroSubheadline", v)}

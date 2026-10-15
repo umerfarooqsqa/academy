@@ -88,7 +88,8 @@ export default async function HomePage() {
             <h1 className="mt-6 font-heading text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.5rem]">
               {content.heroHeadline}
             </h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-600 lg:mx-0">{content.heroSubheadline}</p>
+            {/* No paragraph under the headline (operator request, 2026-10-15) —
+                heroSubheadline is only the Google/link-preview description now. */}
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
               <Link href="/find-a-tutor" className={`${btnPrimary} px-7 py-3.5 text-base`}>
                 Find a tutor <ArrowRightIcon />
