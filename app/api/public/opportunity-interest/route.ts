@@ -23,6 +23,7 @@ import { getOpenOpportunityListings } from "@/lib/opportunities/digest";
 import { parseOpportunityCode } from "@/lib/opportunities/code";
 import { phoneKey, samePhone } from "@/lib/tutors/phone";
 import { notifyOperator } from "@/lib/whatsapp/client";
+import { allowAttempt, clientIp, HOUR } from "@/lib/security/rateLimit";
 
 type Outcome = "claimed" | "pending" | "unregistered" | "taken";
 
@@ -42,6 +43,12 @@ async function alertOperator(text: string) {
 }
 
 export async function POST(req: Request) {
+  // Stops anyone trying number after number to learn which ones belong to
+  // tutors (2026-10-15): 10 tries per hour per IP.
+  if (!(await allowAttempt(`interest-ip:${clientIp(req)}`, 10, HOUR))) {
+    return NextResponse.json({ error: "Too many tries — please try again in an hour." }, { status: 429 });
+  }
+
   const body = await req.json().catch(() => ({}));
   const code = typeof body.opportunityCode === "string" ? parseOpportunityCode(body.opportunityCode) : null;
   const number = typeof body.whatsappNumber === "string" ? body.whatsappNumber : "";
@@ -104,6 +111,6 @@ export async function POST(req: Request) {
   await alertOperator(
     `Website: ${tutor.name} (${tutor.whatsappId}; teaches ${tutor.subjects.join(", ")}) is interested in ${summary}. Review it on /matches.`,
   );
-  const first = tutor.name.trim().split(/\s+/)[0] || "there";
-  return reply("claimed", `Thanks, ${first}! We'll confirm with you on WhatsApp shortly.`);
+  // No name in the reply — it would confirm whose number this is.
+  return reply("claimed", "Thanks! We'll confirm with you on WhatsApp shortly.");
 }

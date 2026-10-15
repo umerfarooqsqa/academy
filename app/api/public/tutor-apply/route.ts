@@ -12,6 +12,7 @@
 // guessing from order.
 
 import { NextResponse } from "next/server";
+import { allowAttempt, clientIp, HOUR } from "@/lib/security/rateLimit";
 import { prisma } from "@/lib/db";
 import { upsertTutor, recordTutorDocument, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
 import { resolveCampaignRef } from "@/lib/campaigns/ref";
@@ -44,6 +45,10 @@ async function uploadDocument(whatsappId: string, kind: "cnic" | "marksheet", fi
 }
 
 export async function POST(req: Request) {
+  // Spam-flood brake (2026-10-15): 10 submissions per hour per IP.
+  if (!(await allowAttempt(`tutor-form-ip:${clientIp(req)}`, 10, HOUR))) {
+    return NextResponse.json({ error: "Too many submissions — please try again in an hour." }, { status: 429 });
+  }
   const form = await req.formData();
   const whatsappId = (form.get("whatsappId") as string | null)?.trim() ?? "";
   if (!whatsappId) {

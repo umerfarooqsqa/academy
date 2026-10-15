@@ -68,6 +68,17 @@ model Tutor {
   // TutorSubscription at notification time (6.5), never cached
   deliveryMode       String    @default("in_person") // "in_person" | "online" | "both" (6.5)
   radiusOverrideKm   Float? // premium-only wider matching radius opt-in (6.5)
+  // Public "Featured tutors" profile (2026-10-15 operator decision): edited by
+  // the admin on /tutors/[id]; shown on the website only when featured AND the
+  // tutor is verified (lib/tutors/verified.ts). Get the tutor's OK first.
+  featured          Boolean   @default(false)
+  gradesVerifiedAt  DateTime? // admin checked the marksheet against the reported grades
+  profilePhotoUrl   String?
+  profileHeadline   String? // e.g. "MBBS student · A* in O-level Biology"
+  profileBio        String?
+  yearsExperience   Int?
+  profileExperience Json? // [{ title, place, period, description }]
+  profileEducation  Json? // [{ degree, institution, year }]
   status             String    @default("pending") // pending | active | inactive
   internalNote       String? // operator-facing flags, e.g. "curriculum ambiguous — verify" —
   // never shown to the tutor/parent. Same field name/purpose used
@@ -143,6 +154,9 @@ model ParentRequest {
   opportunityCode  String?   @unique
   publicHiddenAt   DateTime?
   facebookPostedAt DateTime?
+  // Set when the parent came through "Request this tutor" on a featured
+  // tutor's profile (2026-10-15) — a Match with that tutor is proposed too.
+  preferredTutorId String?
 
   matches Match[]
 
@@ -329,4 +343,15 @@ model Campaign {
 model ProcessedInboundMessage {
   id        String   @id // WhatsApp message id
   createdAt DateTime @default(now())
+}
+
+// Rate limiting for the doors attackers would use (2026-10-15 security
+// hardening — lib/security/rateLimit.ts): one row per attempt, keyed like
+// "login-ip:1.2.3.4" or "interest-ip:…"; rows older than a day are pruned.
+model RateLimitHit {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
 }

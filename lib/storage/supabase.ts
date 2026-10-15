@@ -17,10 +17,11 @@ const DEFAULT_BUCKET = "tutor-documents";
 
 /**
  * Uploads bytes to Supabase Storage at `path` within the configured bucket and
- * returns its public URL. Requires the bucket to be marked public in the
- * Supabase dashboard — no signed-URL logic is implemented (operator glances
- * at these from the /tutors dashboard, per 6.1 step 10, not a public-facing
- * flow, but a public bucket keeps this simple with no token-refresh burden).
+ * returns its storage URL. Since 2026-10-15 the bucket is PRIVATE (CNIC and
+ * marksheet images must never be openable by link alone): the returned URL is
+ * only an identifier — staff view a file through GET /api/tutor-documents,
+ * which checks the login and redirects to a 5-minute signed link
+ * (signedUrlFor below).
  */
 export async function uploadToSupabaseStorage(
   path: string,
@@ -55,5 +56,31 @@ export async function uploadToSupabaseStorage(
     return { ok: true, publicUrl: `${url}/storage/v1/object/public/${bucket}/${path}` };
   } catch (err) {
     return { ok: false, error: (err as Error).message };
+  }
+}
+
+/** Turns a stored document URL (…/storage/v1/object/public/<bucket>/<path>)
+ * into a short-lived signed link, or null if it isn't one of our documents.
+ * The bucket is private, so this is the only way to open a CNIC/marksheet. */
+export async function signedUrlFor(storedUrl: string, expiresInSeconds = 300): Promise<string | null> {
+  const url = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !serviceKey) return null;
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET || DEFAULT_BUCKET;
+  const prefix = `${url}/storage/v1/object/public/${bucket}/`;
+  if (!storedUrl.startsWith(prefix)) return null;
+  const path = storedUrl.slice(prefix.length);
+  if (!path || path.includes("..")) return null;
+  try {
+    const res = await fetch(`${url}/storage/v1/object/sign/${bucket}/${path}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ expiresIn: expiresInSeconds }),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { signedURL?: string };
+    return json.signedURL ? `${url}/storage/v1${json.signedURL}` : null;
+  } catch {
+    return null;
   }
 }

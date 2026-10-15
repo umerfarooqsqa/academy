@@ -6,6 +6,7 @@
 // missing-budget note) + lib/matching/run.ts#runMatchingForParent.
 
 import { NextResponse } from "next/server";
+import { allowAttempt, clientIp, HOUR } from "@/lib/security/rateLimit";
 import { createParentRequest, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
 import { resolveCampaignRef } from "@/lib/campaigns/ref";
 import { missingParentFields, type ParentDraft } from "@/lib/intake/helpers";
@@ -13,6 +14,10 @@ import { runMatchingForParent } from "@/lib/matching/run";
 import { parseCoordPair } from "@/lib/geo/zoneLookup";
 
 export async function POST(req: Request) {
+  // Spam-flood brake (2026-10-15): 10 submissions per hour per IP.
+  if (!(await allowAttempt(`parent-form-ip:${clientIp(req)}`, 10, HOUR))) {
+    return NextResponse.json({ error: "Too many submissions — please try again in an hour." }, { status: 429 });
+  }
   const body = await req.json();
   const whatsappId = typeof body.whatsappId === "string" ? body.whatsappId.trim() : "";
   if (!whatsappId) {

@@ -307,13 +307,13 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
       <div className="flex flex-col gap-4">
         <div className={card}>
           <h2 className="text-sm font-semibold text-gray-900">Verification documents (6.1 step 10)</h2>
-          <p className="mt-1 text-xs text-gray-500">Glance-check only — never OCR'd or sent to an LLM.</p>
+          <p className="mt-1 text-xs text-gray-500">Glance-check only — never OCR'd or sent to an LLM. Stored privately; each link opens a copy that expires in 5 minutes.</p>
           <div className="mt-2 space-y-2">
             <div>
               <span className="text-xs font-medium text-gray-500">CNIC:</span>{" "}
               {tutor.cnicImageUrl ? (
                 <>
-                  <a href={tutor.cnicImageUrl} target="_blank" className="text-xs text-blue-600 hover:underline">
+                  <a href={`/api/tutor-documents?url=${encodeURIComponent(tutor.cnicImageUrl)}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
                     view image
                   </a>
                   {/* Admin CNIC check — required for this tutor to count as
@@ -341,7 +341,7 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
               <span className="text-xs font-medium text-gray-500">Marksheets:</span>{" "}
               {tutor.marksheetImageUrls.length > 0 ? (
                 tutor.marksheetImageUrls.map((url, i) => (
-                  <a key={url} href={url} target="_blank" className="mr-2 text-xs text-blue-600 hover:underline">
+                  <a key={url} href={`/api/tutor-documents?url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer" className="mr-2 text-xs text-blue-600 hover:underline">
                     #{i + 1}
                   </a>
                 ))
