@@ -23,6 +23,8 @@ export interface SiteContent {
   /** Google Business Profile Place ID — enables the live Google rating/reviews
    * section on the homepage (lib/google/reviews.ts, 2026-10-15). Empty = hidden. */
   googlePlaceId: string;
+  /** Facebook Page link shown in the public footer (2026-10-15). Empty = hidden. */
+  facebookUrl: string;
 }
 
 // Copy keeps the real substance of CLAUDE.md Section 11's brand positioning
@@ -48,6 +50,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   testimonials: [],
   contactEmail: "",
   googlePlaceId: "",
+  facebookUrl: "https://www.facebook.com/Lilitutoracademy/",
 };
 
 export async function getSiteContent(): Promise<SiteContent> {

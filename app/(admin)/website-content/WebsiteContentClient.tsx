@@ -66,6 +66,16 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
         />
       </div>
       <div>
+        <label className={label}>Facebook Page link (shown in the website footer)</label>
+        <input
+          className={input}
+          type="url"
+          placeholder="https://www.facebook.com/YourPage/ — leave empty to hide"
+          value={content.facebookUrl}
+          onChange={(e) => setContent({ ...content, facebookUrl: e.target.value })}
+        />
+      </div>
+      <div>
         <label className={label}>Google Business Place ID (shows your live Google rating and reviews on the homepage)</label>
         <input
           className={input}

@@ -31,7 +31,7 @@ export default async function PublicLayout({ children }: { children: React.React
   const content = await getSiteContent();
 
   return (
-    <div className={`${headingFont.variable} bg-[#FFFBF5]`}>
+    <div className={`${headingFont.variable} flex min-h-screen flex-col bg-[#FFFBF5]`}>
       <header className="sticky top-0 z-10 border-b-2 border-gray-900/5 bg-[#FFFBF5]/90 backdrop-blur">
         <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-2 sm:px-6">
           {/* The logo (2026-10-15): Lili's head on the rose badge (public/brand/,
@@ -75,7 +75,7 @@ export default async function PublicLayout({ children }: { children: React.React
         </div>
       </header>
 
-      <main>{children}</main>
+      <main className="flex-1">{children}</main>
 
       <footer className="border-t-2 border-gray-900/5 py-8">
         <div className="mx-auto max-w-6xl px-4 text-center sm:px-6">
@@ -83,7 +83,20 @@ export default async function PublicLayout({ children }: { children: React.React
             © {new Date().getFullYear()} {content.siteName}
           </p>
           <p className="mt-1 text-xs text-gray-400">A registered company — part of Suntex Services.</p>
-          <p className="mt-2 text-xs">
+          {content.facebookUrl && (
+            <a
+              href={content.facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border-2 border-gray-900 bg-white px-4 py-2 text-sm font-bold text-gray-900 shadow-[2px_2px_0_0_#1f2937] transition hover:-translate-y-0.5 active:translate-y-0 active:shadow-none"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 fill-[#1877F2]">
+                <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.88v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07Z" />
+              </svg>
+              Follow us on Facebook
+            </a>
+          )}
+          <p className="mt-3 text-xs">
             <Link href="/privacy" className="font-semibold text-gray-500 underline underline-offset-2 hover:text-gray-900">
               Privacy Policy
             </Link>
