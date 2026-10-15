@@ -23,7 +23,6 @@ import {
 } from "@/lib/import/media";
 import { extractTutorFromConversation, extractParentFromConversation } from "@/lib/llm/extract";
 import { extractCoordsFromText } from "@/lib/geo/googleMapsLink";
-import { classifyCurriculum, CURRICULUM_AMBIGUOUS_NOTE } from "@/lib/intake/curriculum";
 import { upsertTutor, createParentRequest, recordTutorDocument } from "@/lib/intake/persist";
 import { classifyDocumentSlot, buildDocumentStoragePath } from "@/lib/intake/documents";
 import { uploadToSupabaseStorage } from "@/lib/storage/supabase";
@@ -106,21 +105,6 @@ async function handleTutorImport(
     draft.preciseLongitude = sharedLocation.longitude;
   }
 
-  if (draft.curriculum) {
-    const verdict = classifyCurriculum(draft.curriculum);
-    if (verdict === "decline") {
-      const tutor = await upsertTutor({
-        whatsappId,
-        draft,
-        rawMessage: transcript,
-        campaignId,
-        status: "inactive",
-        internalNote: "declined at intake — out-of-scope curriculum",
-      });
-      return NextResponse.json({ tutor, declined: true, activated: false, missingFields: [] }, { status: 201 });
-    }
-  }
-  const curriculumNote = draft.curriculum && classifyCurriculum(draft.curriculum) === "ambiguous" ? CURRICULUM_AMBIGUOUS_NOTE : null;
 
   // Create/update the tutor row first (status pending) so document uploads
   // below have a row to attach to — mirrors the live intake's ordering
@@ -131,7 +115,6 @@ async function handleTutorImport(
     rawMessage: transcript,
     campaignId,
     status: "pending",
-    internalNote: curriculumNote,
   });
 
   // All media in the transcript is treated as a tutor document, in
@@ -158,7 +141,7 @@ async function handleTutorImport(
   }
 
   const missing = missingTutorFields(draft);
-  const notes = [curriculumNote, ...uploadIssues];
+  const notes = [...uploadIssues];
   let status: "active" | "pending";
   if (missing.length === 0 && hasCnic) {
     status = "active";
@@ -194,24 +177,9 @@ async function handleParentImport(
     draft.preciseLongitude = sharedLocation.longitude;
   }
 
-  if (draft.curriculum) {
-    const verdict = classifyCurriculum(draft.curriculum);
-    if (verdict === "decline") {
-      const parent = await createParentRequest({
-        whatsappId,
-        draft,
-        rawMessage: transcript,
-        campaignId,
-        status: "closed",
-        internalNote: "declined at intake — out-of-scope curriculum",
-      });
-      return NextResponse.json({ parent, declined: true, missingFields: [] }, { status: 201 });
-    }
-  }
-  const curriculumNote = draft.curriculum && classifyCurriculum(draft.curriculum) === "ambiguous" ? CURRICULUM_AMBIGUOUS_NOTE : null;
 
   const missing = missingParentFields(draft);
-  const notes = [curriculumNote, missing.length > 0 ? `missing fields from import: ${missing.join(", ")}` : null];
+  const notes = [missing.length > 0 ? `missing fields from import: ${missing.join(", ")}` : null];
 
   const parent = await createParentRequest({
     whatsappId,

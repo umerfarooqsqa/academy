@@ -1,7 +1,6 @@
 // Public, unauthenticated — the /become-a-tutor web form posts here
 // (multipart, since it may include CNIC/marksheet files). Same pipeline every
-// other tutor-intake path uses (lib/intake/persist.ts#upsertTutor, the same
-// curriculum decline check), minus the LLM step a structured form doesn't
+// other tutor-intake path uses (lib/intake/persist.ts#upsertTutor), minus the LLM step a structured form doesn't
 // need. CNIC-gated activation rule unchanged from chat-import (CLAUDE.md 6.1
 // step 10): active only once all required fields are present AND a CNIC
 // image was uploaded, otherwise pending with a note, fixable later from
@@ -14,12 +13,10 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { classifyCurriculum, CURRICULUM_AMBIGUOUS_NOTE } from "@/lib/intake/curriculum";
 import { upsertTutor, recordTutorDocument, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
 import { missingTutorFields, type TutorDraft } from "@/lib/intake/helpers";
 import { extensionForMime, buildDocumentStoragePath } from "@/lib/intake/documents";
 import { uploadToSupabaseStorage } from "@/lib/storage/supabase";
-import { CURRICULUM_DECLINE } from "@/lib/messages";
 import { parseCoordPair } from "@/lib/geo/zoneLookup";
 
 function parseGradesBySubject(raw: FormDataEntryValue | null): Record<string, string> | null {
@@ -78,19 +75,7 @@ export async function POST(req: Request) {
     await fillAreaFromPreciseLocation(draft);
   }
 
-  if (draft.curriculum && classifyCurriculum(draft.curriculum) === "decline") {
-    await upsertTutor({
-      whatsappId,
-      draft,
-      rawMessage: "(submitted via website)",
-      status: "inactive",
-      internalNote: "declined at intake — out-of-scope curriculum",
-    });
-    return NextResponse.json({ declined: true, message: CURRICULUM_DECLINE });
-  }
-
-  const curriculumNote =
-    draft.curriculum && classifyCurriculum(draft.curriculum) === "ambiguous" ? CURRICULUM_AMBIGUOUS_NOTE : null;
+  // Every level is accepted (operator decision 2026-10-15 — no curriculum decline).
 
   // Create first (status pending) so document uploads below have a row to attach to.
   await upsertTutor({
@@ -98,7 +83,6 @@ export async function POST(req: Request) {
     draft,
     rawMessage: "(submitted via website)",
     status: "pending",
-    internalNote: curriculumNote,
   });
 
   let hasCnic = false;
@@ -118,7 +102,7 @@ export async function POST(req: Request) {
   }
 
   const missing = missingTutorFields(draft);
-  const notes = [curriculumNote, ...uploadIssues];
+  const notes = [...uploadIssues];
   let status: "active" | "pending";
   if (missing.length === 0 && hasCnic) {
     status = "active";

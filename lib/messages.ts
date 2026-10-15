@@ -75,12 +75,6 @@ export const PARENT_CONTINUE_OR_CALL =
   "You're welcome to continue here on WhatsApp, or if you'd prefer, I can have our team call " +
   "you directly — just reply 'call me' anytime.";
 
-// --- [§13] Curriculum decline (confirmed Matric/SSC only, never ambiguous — 6.1 step 7) ---
-export const CURRICULUM_DECLINE =
-  "Thanks so much for reaching out! Right now we specialize in O/A-levels, FSc/Intermediate, " +
-  "and university-level tutoring, so we're not the best fit for a Matric-level requirement at " +
-  "the moment. Wishing you the best in finding the right tutor!";
-
 // --- [§13] Demo slot offer (Phase 3, kept here for one source of truth) ---
 export function demoSlotOffer(tutorName: string, slots: string[]): string {
   const numbered = slots.map((s, i) => `${i + 1}) ${s}`).join("  ");

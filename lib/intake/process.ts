@@ -8,7 +8,6 @@ import { sendText, notifyOperator } from "@/lib/whatsapp/client";
 import { downloadWhatsAppMedia } from "@/lib/whatsapp/media";
 import { uploadToSupabaseStorage } from "@/lib/storage/supabase";
 import { extractTutor, extractParent } from "@/lib/llm/extract";
-import { classifyCurriculum, CURRICULUM_AMBIGUOUS_NOTE } from "@/lib/intake/curriculum";
 import {
   upsertTutor,
   createParentRequest,
@@ -47,7 +46,6 @@ import {
   TUTOR_DOC_RECEIVED_ACK,
   TUTOR_CNIC_REQUIRED,
   TUTOR_DOC_UPLOAD_FAILED,
-  CURRICULUM_DECLINE,
   GENERIC_FALLBACK,
 } from "@/lib/messages";
 
@@ -200,24 +198,6 @@ async function handleTutorMessage(whatsappId: string, text: string, partial: Par
   const draft = mergeDraft<TutorDraft>(partial.tutor, extraction.data);
   partial.tutor = draft;
 
-  // Curriculum scope check (6.1 step 7) — once we actually have a curriculum value.
-  if (draft.curriculum) {
-    const verdict = classifyCurriculum(draft.curriculum);
-    if (verdict === "decline") {
-      await upsertTutor({
-        whatsappId,
-        draft,
-        rawMessage: text,
-        campaignId: partial.campaignId,
-        status: "inactive",
-        internalNote: "declined at intake — out-of-scope curriculum",
-      });
-      await saveSession(whatsappId, "tutor", "declined", partial);
-      await reply(whatsappId, CURRICULUM_DECLINE);
-      return;
-    }
-    if (verdict === "ambiguous") partial.internalNote = CURRICULUM_AMBIGUOUS_NOTE;
-  }
 
   const missing = missingTutorFields(draft);
   if (missing.length > 0) {
@@ -324,23 +304,6 @@ async function handleParentMessage(whatsappId: string, text: string, partial: Pa
   const draft = mergeDraft<ParentDraft>(partial.parent, extraction.data);
   partial.parent = draft;
 
-  if (draft.curriculum) {
-    const verdict = classifyCurriculum(draft.curriculum);
-    if (verdict === "decline") {
-      await createParentRequest({
-        whatsappId,
-        draft,
-        rawMessage: text,
-        campaignId: partial.campaignId,
-        status: "closed",
-        internalNote: "declined at intake — out-of-scope curriculum",
-      });
-      await saveSession(whatsappId, "parent", "declined", partial);
-      await reply(whatsappId, CURRICULUM_DECLINE);
-      return;
-    }
-    if (verdict === "ambiguous") partial.internalNote = CURRICULUM_AMBIGUOUS_NOTE;
-  }
 
   const missing = missingParentFields(draft);
   if (missing.length > 0) {

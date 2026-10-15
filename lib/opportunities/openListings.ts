@@ -6,7 +6,7 @@
 // away (on /opportunities, and posted to the Facebook Page) — it no longer
 // waits for matching to find a tutor and for the operator to approve the
 // match. A request is listed while ALL of these hold:
-//   - it isn't closed (a declined Matric request is closed at intake)
+//   - it isn't closed
 //   - the operator hasn't hidden it ("Hide from public" on /parents/[id])
 //   - it has its public OPP code
 //   - it came in within the last OPPORTUNITY_MAX_AGE_DAYS (14)

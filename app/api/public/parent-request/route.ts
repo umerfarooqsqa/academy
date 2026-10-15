@@ -3,15 +3,12 @@
 // extraction step entirely (CLAUDE.md 6.2 is for free-text WhatsApp messages
 // only) and goes straight into the same pipeline every other parent-intake
 // path uses: lib/intake/persist.ts#createParentRequest (zone resolution,
-// missing-budget note) + lib/matching/run.ts#runMatchingForParent, with the
-// same curriculum decline check (6.1 step 7) as WhatsApp/chat-import intake.
+// missing-budget note) + lib/matching/run.ts#runMatchingForParent.
 
 import { NextResponse } from "next/server";
-import { classifyCurriculum, CURRICULUM_AMBIGUOUS_NOTE } from "@/lib/intake/curriculum";
 import { createParentRequest, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
 import { missingParentFields, type ParentDraft } from "@/lib/intake/helpers";
 import { runMatchingForParent } from "@/lib/matching/run";
-import { CURRICULUM_DECLINE } from "@/lib/messages";
 import { parseCoordPair } from "@/lib/geo/zoneLookup";
 
 export async function POST(req: Request) {
@@ -48,26 +45,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Missing required fields: ${missing.join(", ")}` }, { status: 400 });
   }
 
-  if (draft.curriculum && classifyCurriculum(draft.curriculum) === "decline") {
-    await createParentRequest({
-      whatsappId,
-      draft,
-      rawMessage: "(submitted via website)",
-      status: "closed",
-      internalNote: "declined at intake — out-of-scope curriculum",
-    });
-    return NextResponse.json({ declined: true, message: CURRICULUM_DECLINE });
-  }
-
-  const curriculumNote =
-    draft.curriculum && classifyCurriculum(draft.curriculum) === "ambiguous" ? CURRICULUM_AMBIGUOUS_NOTE : null;
+  // Every level is accepted — Matric and primary classes included (operator
+  // decision 2026-10-15; the old curriculum decline check is gone).
 
   const parent = await createParentRequest({
     whatsappId,
     draft,
     rawMessage: "(submitted via website)",
     status: "pending",
-    internalNote: curriculumNote,
   });
 
   try {
