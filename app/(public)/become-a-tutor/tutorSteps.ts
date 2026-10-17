@@ -85,6 +85,14 @@ export const TUTOR_STEPS: StepDef[] = [
     placeholder: "e.g. MBBS (3rd year), A-levels",
   },
   {
+    // Required (2026-10-17).
+    kind: "text",
+    id: "schoolName",
+    label: "School / college",
+    prompt: "Which school or college did you study at?",
+    placeholder: "e.g. Karachi Grammar School, DJ Science College",
+  },
+  {
     kind: "grades",
     id: "grades",
     subjectsFrom: "subjects",
@@ -140,6 +148,7 @@ export function buildTutorFormData(answers: Answers): FormData {
   body.append("subjectGroup", String(answers.subjectGroup ?? "other"));
   body.append("curriculum", String(answers.curriculum ?? "").trim());
   body.append("qualification", String(answers.qualification ?? "").trim());
+  body.append("schoolName", String(answers.schoolName ?? "").trim());
   body.append("gradesBySubject", JSON.stringify(collectGrades(answers, "grades", splitSubjects(answers.subjects))));
   for (const tag of (answers.availability as string[] | null) ?? []) body.append("availability", tag);
   const fee = parseAmount(answers.expectedFee);

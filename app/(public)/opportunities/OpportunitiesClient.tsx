@@ -201,7 +201,10 @@ function OpportunityCard({ listing }: { listing: OpportunityListing & { distance
       <h3 className="mt-3 font-heading text-lg font-semibold leading-tight text-slate-900">
         {listing.subjects.join(", ") || "Tutor needed"}
       </h3>
-      <p className="mt-0.5 text-sm text-slate-600">{listing.curriculum}</p>
+      <p className="mt-0.5 text-sm text-slate-600">
+        {listing.curriculum}
+        {listing.schoolName && <span className="text-slate-500"> · {listing.schoolName}</span>}
+      </p>
       <p className="mt-3 text-sm font-medium text-slate-700">
         {online ? "💻 Online" : `📍 ${listing.area}`}
         {listing.distanceKm != null && <span className="text-rose-600"> · ~{listing.distanceKm.toFixed(1)} km</span>}

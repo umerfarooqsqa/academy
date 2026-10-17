@@ -125,6 +125,7 @@ describe("payload builders", () => {
       subjects: "Chemistry, Biology",
       subjectGroup: "pre_medical",
       curriculum: "FSc",
+      schoolName: " The City School ",
       deliveryMode: "in_person",
       tutorGenderPreference: "female",
       location: { latitude: 24.93, longitude: 67.1, area: "Gulshan-e-Iqbal", viaGps: true },
@@ -147,6 +148,7 @@ describe("payload builders", () => {
       availability: ["weekday_evening"],
       budget: 15000,
       studentInfo: null,
+      schoolName: "The City School",
     });
   });
 
@@ -161,6 +163,7 @@ describe("payload builders", () => {
       subjectGroup: "pre_medical",
       curriculum: "A-levels",
       qualification: "MBBS",
+      schoolName: "DJ Science College",
       "grades:Biology": "A",
       "grades:Chemistry": "A-",
       availability: ["weekend_morning", "weekend_afternoon"],
@@ -174,6 +177,7 @@ describe("payload builders", () => {
     const fd = buildTutorFormData(answers);
     expect(fd.get("area")).toBe("Malir");
     expect(fd.get("gender")).toBe("female");
+    expect(fd.get("schoolName")).toBe("DJ Science College");
     expect(fd.get("latitude")).toBeNull();
     expect(fd.get("subjects")).toBe("Biology, Chemistry");
     expect(JSON.parse(fd.get("gradesBySubject") as string)).toEqual({ Biology: "A", Chemistry: "A-" });

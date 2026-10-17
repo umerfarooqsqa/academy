@@ -29,6 +29,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
           </>
         )}
       </p>
+      {parent.schoolName && <p className="mt-1 text-sm text-gray-500">School: {parent.schoolName}</p>}
       {parent.studentInfo && <p className="mt-1 text-sm text-gray-500">{parent.studentInfo}</p>}
       <div className="mt-4">
         <ParentDetailClient parent={parent} campaigns={campaigns} matches={parent.matches} />

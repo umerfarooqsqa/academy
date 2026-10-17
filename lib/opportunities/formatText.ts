@@ -9,6 +9,8 @@ export interface OpportunityListing {
   subjects: string[];
   subjectGroup: string;
   curriculum: string;
+  /** The student's school (2026-10-17 — operator chose to show it publicly). */
+  schoolName?: string | null;
   area: string;
   // Resolved from AreaZone by area name (2026-10-13 feature: tutors can see
   // live distance from their own location) — undefined if the area string
@@ -50,7 +52,8 @@ export function formatOpportunityCopyText(listing: OpportunityListing, opportuni
   const action = opportunitiesUrl
     ? `Interested? Tap "I'm interested" on ${listing.opportunityCode} at ${opportunitiesUrl}`
     : `Interested? Tap "I'm interested" on ${listing.opportunityCode} on our Opportunities page.`;
-  return `📌 ${subjects} tutor needed — ${where}\n${groupLabel(listing.subjectGroup)} · ${listing.curriculum}\n${action}`;
+  const school = listing.schoolName ? ` · ${listing.schoolName}` : "";
+  return `📌 ${subjects} tutor needed — ${where}\n${groupLabel(listing.subjectGroup)} · ${listing.curriculum}${school}\n${action}`;
 }
 
 const TIME_LABELS: Record<string, string> = {
@@ -107,7 +110,13 @@ export function formatTuitionsPost(listings: OpportunityListing[], siteUrl: stri
     const times = (l.availability ?? []).map((t) => TIME_LABELS[t]).filter(Boolean);
     const title = single ? `📘 ${subjects} — ${level}` : `${NUMBER_EMOJI[i] ?? "▪️"} ${subjects} — ${level}`;
     const indent = single ? "" : "     ";
-    return [title, `${indent}${where}`, ...(times.length ? [`${indent}🕒 ${times.join(", ")}`] : []), `${indent}🔖 Ref: ${l.opportunityCode}`].join("\n");
+    return [
+      title,
+      ...(l.schoolName ? [`${indent}🏫 ${l.schoolName.trim()}`] : []),
+      `${indent}${where}`,
+      ...(times.length ? [`${indent}🕒 ${times.join(", ")}`] : []),
+      `${indent}🔖 Ref: ${l.opportunityCode}`,
+    ].join("\n");
   });
 
   const areas = [...new Set(listings.filter((l) => l.deliveryMode !== "online").map((l) => hashtag(l.area)))];

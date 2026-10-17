@@ -26,6 +26,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     "email",
     "phone",
     "qualification",
+    "schoolName",
     "subjects",
     "subjectGroup",
     "curriculum",

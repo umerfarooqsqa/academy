@@ -83,6 +83,7 @@ describe("filterOpenListings", () => {
       subjects: ["Biology"],
       subjectGroup: "pre_medical",
       curriculum: "FSc",
+      schoolName: null,
       area: "Malir",
       latitude: 24.89,
       longitude: 67.2,

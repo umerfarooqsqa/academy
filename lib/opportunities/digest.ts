@@ -32,6 +32,7 @@ function fetchRequests(now: Date, extraWhere: { facebookPostedAt?: null } = {}) 
       subjects: true,
       subjectGroup: true,
       curriculum: true,
+      schoolName: true,
       area: true,
       deliveryMode: true,
       availability: true,

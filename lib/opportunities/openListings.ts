@@ -35,6 +35,7 @@ export interface RequestRow {
   subjects: string[];
   subjectGroup: string;
   curriculum: string;
+  schoolName?: string | null;
   area: string;
   deliveryMode: string;
   availability?: string[];
@@ -70,6 +71,7 @@ export function toListing(r: RequestRow, zones: ZoneRow[]): OpportunityListing {
     subjects: r.subjects,
     subjectGroup: r.subjectGroup,
     curriculum: r.curriculum,
+    schoolName: r.schoolName ?? null,
     area: r.area,
     latitude: zone?.latitude,
     longitude: zone?.longitude,

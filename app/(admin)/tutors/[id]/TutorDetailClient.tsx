@@ -22,6 +22,7 @@ interface TutorDetailProps {
     cnicVerifiedAt: Date | null;
     marksheetImageUrls: string[];
     gender: string | null;
+    schoolName: string | null;
     area: string;
     availability: string[];
     expectedFee: number | null;
@@ -65,6 +66,7 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
     email: tutor.email ?? "",
     phone: tutor.phone ?? "",
     qualification: tutor.qualification,
+    schoolName: tutor.schoolName ?? "",
     subjects: tutor.subjects.join(", "),
     subjectGroup: tutor.subjectGroup,
     curriculum: tutor.curriculum,
@@ -101,6 +103,7 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
         email: form.email || null,
         phone: form.phone || null,
         qualification: form.qualification,
+        schoolName: form.schoolName.trim() || null,
         subjects: form.subjects.split(",").map((s) => s.trim()).filter(Boolean),
         subjectGroup: form.subjectGroup,
         curriculum: form.curriculum,
@@ -194,6 +197,10 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
               value={form.qualification}
               onChange={(e) => setForm({ ...form, qualification: e.target.value })}
             />
+          </div>
+          <div>
+            <label className={label}>School / college studied at</label>
+            <input className={input} value={form.schoolName} onChange={(e) => setForm({ ...form, schoolName: e.target.value })} />
           </div>
           <div>
             <label className={label}>Subjects (comma-separated)</label>

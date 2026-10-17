@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     deliveryMode: body.deliveryMode || "in_person",
     availability: Array.isArray(body.availability) ? body.availability.filter(Boolean) : null,
     tutorGenderPreference: normalizeGenderPreference(body.tutorGenderPreference),
+    schoolName: typeof body.schoolName === "string" ? body.schoolName.trim().slice(0, 120) || null : null,
   };
 
   // From the Lili chat's "Share my location" button (browser geolocation).
@@ -49,7 +50,8 @@ export async function POST(req: Request) {
     await fillAreaFromPreciseLocation(draft);
   }
 
-  const missing = missingParentFields(draft);
+  // Required on the website form (2026-10-17).
+  const missing = [...missingParentFields(draft), ...(draft.schoolName ? [] : ["school"])];
   if (missing.length > 0) {
     return NextResponse.json({ error: `Missing required fields: ${missing.join(", ")}` }, { status: 400 });
   }

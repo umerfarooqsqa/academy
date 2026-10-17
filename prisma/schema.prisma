@@ -72,6 +72,7 @@ model Tutor {
   // the admin on /tutors/[id]; shown on the website only when featured AND the
   // tutor is verified (lib/tutors/verified.ts). Get the tutor's OK first.
   termsAcceptedAt   DateTime? // when the tutor agreed to the Terms & Conditions on /become-a-tutor (2026-10-15)
+  schoolName        String? // school/college the tutor studied at — required on /become-a-tutor (2026-10-17)
   featured          Boolean   @default(false)
   gender            String? // "female" | "male" | null = not recorded (2026-10-15) — parents can
                             // ask for a female/male tutor; see ParentRequest.tutorGenderPreference
@@ -164,6 +165,9 @@ model ParentRequest {
   // the other recorded gender; tutors with no gender recorded still pass, with
   // a note for the operator (lib/matching/engine.ts#passesGenderPreference).
   tutorGenderPreference String @default("any")
+  // The school the student goes to — required on /find-a-tutor and shown on
+  // the public listing / Facebook post (operator decision, 2026-10-17).
+  schoolName String?
 
   matches Match[]
 

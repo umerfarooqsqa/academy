@@ -90,3 +90,16 @@ describe("opportunity text formatting (CLAUDE.md 6.5, reused by digest + copy bu
     expect(formatTuitionsPost([{ ...listing, curriculum: " " }], "u")).toContain("— Pre-Medical");
   });
 });
+
+describe("student's school on public listings (2026-10-17)", () => {
+  it("shows the school in the Facebook post and the Share text when given", () => {
+    const withSchool = { ...listing, schoolName: "The City School" };
+    expect(formatTuitionsPost([withSchool], "https://x.test")).toContain("🏫 The City School");
+    expect(formatOpportunityCopyText(withSchool)).toContain("FSc Pre-Medical · The City School");
+  });
+
+  it("leaves it out when there is none (older requests)", () => {
+    expect(formatTuitionsPost([listing], "https://x.test")).not.toContain("🏫");
+    expect(formatOpportunityCopyText(listing)).not.toContain(" · The");
+  });
+});

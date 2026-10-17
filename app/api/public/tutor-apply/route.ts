@@ -57,6 +57,10 @@ export async function POST(req: Request) {
   }
   // Tutors must agree to the Terms & Conditions to register (2026-10-15);
   // when they agreed is recorded on Tutor.termsAcceptedAt below.
+  // Required on the website form (2026-10-17): where the tutor studied.
+  if (!((form.get("schoolName") as string | null) ?? "").trim()) {
+    return NextResponse.json({ error: "Please tell us which school or college you studied at." }, { status: 400 });
+  }
   if (form.get("acceptedTerms") !== "yes") {
     return NextResponse.json({ error: "Please agree to the Terms & Conditions to register." }, { status: 400 });
   }
@@ -75,6 +79,7 @@ export async function POST(req: Request) {
     availability: availabilityRaw.length > 0 ? availabilityRaw : null,
     expectedFee: form.get("expectedFee") ? Number(form.get("expectedFee")) : null,
     gender: normalizeGender(form.get("gender")),
+    schoolName: ((form.get("schoolName") as string | null) ?? "").trim().slice(0, 120) || null,
   };
 
   // From the Lili chat's "Share my location" button (browser geolocation).

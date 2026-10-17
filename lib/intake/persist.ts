@@ -102,6 +102,7 @@ export async function upsertTutor(opts: {
     expectedFee: draft.expectedFee ?? null,
     // Only set when given — a later WhatsApp re-intake never wipes it.
     ...(draft.gender ? { gender: draft.gender } : {}),
+    ...(draft.schoolName ? { schoolName: draft.schoolName } : {}),
     status,
     internalNote: notes || null,
     rawMessage,
@@ -152,6 +153,7 @@ export async function createParentRequest(opts: {
       deliveryMode: draft.deliveryMode ?? "in_person",
       availability: draft.availability ?? [],
       tutorGenderPreference: draft.tutorGenderPreference ?? "any",
+      schoolName: draft.schoolName ?? null,
       status,
       internalNote: notes || null,
       rawMessage,

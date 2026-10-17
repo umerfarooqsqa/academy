@@ -46,12 +46,13 @@ export default async function PrivacyPage() {
       <Section title="What we collect">
         <p>
           <strong>From parents and students:</strong> the subjects and level needed, your area, your WhatsApp number,
-          preferred times, whether you&apos;d prefer a female or male tutor, and — only if you choose to give them —
+          preferred times, the student&apos;s school, whether you&apos;d prefer a female or male tutor, and — only if
+          you choose to give them —
           your monthly budget and notes about the student.
         </p>
         <p>
           <strong>From tutors:</strong> your name, WhatsApp number, gender, area, subjects, curriculum/level,
-          qualification, the grades you report, availability, and — if you choose — your expected fee. To verify your
+          qualification, the school or college you studied at, the grades you report, availability, and — if you choose — your expected fee. To verify your
           identity and grades we ask for a photo of your CNIC and your marksheet or transcript.
         </p>
         <p>
@@ -80,7 +81,8 @@ export default async function PrivacyPage() {
 
       <Section title="What is shown publicly">
         <p>
-          On our website and our Facebook Page we only ever show a tuition&apos;s subject, level and area. We never
+          On our website and our Facebook Page we only ever show a tuition&apos;s subject, level, area and the
+          student&apos;s school. We never
           publish a student&apos;s or parent&apos;s name, phone number, address or exact location. Public counts such
           as &ldquo;verified tutors near you&rdquo; are totals per area.
         </p>

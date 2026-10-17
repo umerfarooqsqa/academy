@@ -60,6 +60,14 @@ export const makeParentSteps = (counts: ZoneTutorCount[] = [], opts: { requested
     placeholder: "e.g. Cambridge A-levels",
   },
   {
+    // Required (2026-10-17); shown with the public tuition listing.
+    kind: "text",
+    id: "schoolName",
+    label: "School",
+    prompt: "Which school does the student go to?",
+    placeholder: "e.g. The City School, Beaconhouse",
+  },
+  {
     kind: "chips",
     id: "deliveryMode",
     label: "Tuition type",
@@ -140,5 +148,6 @@ export function buildParentPayload(answers: Answers) {
     availability: (answers.availability as string[] | null) ?? [],
     budget: parseAmount(answers.budget),
     studentInfo: typeof answers.studentInfo === "string" ? answers.studentInfo.trim() : null,
+    schoolName: String(answers.schoolName ?? "").trim(),
   };
 }
