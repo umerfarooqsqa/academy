@@ -90,13 +90,34 @@ model Tutor {
   rawMessage         String // original WhatsApp text, kept for audit/training
   createdAt          DateTime  @default(now())
 
-  subscriptions TutorSubscription[]
-  matches       Match[]
-  ratings       Rating[]
+  subscriptions    TutorSubscription[]
+  matches          Match[]
+  ratings          Rating[]
+  termsAcceptances TermsAcceptance[]
 
   @@index([status])
   @@index([campaignId])
   @@index([area])
+}
+
+// Evidence of an agreement a tutor accepted on /become-a-tutor (2026-10-19):
+// an exact plain-text copy of what was shown, plus when, from which number,
+// IP address and device. One row per document per registration. Kept even if
+// the tutor is deleted (tutorId becomes null; whatsappId stays). RLS enabled.
+model TermsAcceptance {
+  id         String   @id @default(cuid())
+  tutorId    String?
+  tutor      Tutor?   @relation(fields: [tutorId], references: [id], onDelete: SetNull)
+  document   String // "tutor_agreement" | "terms" — lib/agreementSnapshot.ts
+  version    String // short SHA-256 of the wording (lib/agreementSnapshot.ts#agreementVersion)
+  updatedOn  String // the document's "Last updated" date (YYYY-MM-DD) when accepted
+  text       String // exact plain-text copy of the document as shown
+  whatsappId String
+  ipAddress  String?
+  userAgent  String?
+  acceptedAt DateTime @default(now())
+
+  @@index([tutorId])
 }
 
 model TutorSubscription {

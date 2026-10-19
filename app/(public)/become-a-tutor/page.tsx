@@ -6,6 +6,8 @@
 
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
+import { getSiteContent } from "@/lib/siteContent";
+import { agreementVersion, visibleSections } from "@/lib/agreementSnapshot";
 import BecomeATutorForm from "./BecomeATutorForm";
 import { CheckIcon } from "../icons";
 import { checkDot, container, eyebrow } from "../ui";
@@ -19,10 +21,18 @@ export const metadata: Metadata = {
 };
 
 export default async function BecomeATutorPage() {
-  const zones = await prisma.areaZone.findMany({
-    select: { name: true, latitude: true, longitude: true, maxKm: true },
-    orderBy: { name: "asc" },
-  });
+  const [zones, content] = await Promise.all([
+    prisma.areaZone.findMany({
+      select: { name: true, latitude: true, longitude: true, maxKm: true },
+      orderBy: { name: "asc" },
+    }),
+    getSiteContent(),
+  ]);
+  const agreement = {
+    sections: visibleSections(content.tutorAgreement),
+    updatedOn: content.tutorAgreementUpdatedOn,
+    version: await agreementVersion(content.tutorAgreement),
+  };
 
   return (
     <div className="bg-gradient-to-b from-sky-50/70 to-white">
@@ -44,7 +54,7 @@ export default async function BecomeATutorPage() {
             ))}
           </ul>
         </div>
-        <BecomeATutorForm zones={zones} />
+        <BecomeATutorForm zones={zones} agreement={agreement} />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { card, table, th, td, input, label, btnPrimary, btnSecondary, btnDanger, badge } from "@/app/components/ui";
+import PasswordInput from "@/app/components/PasswordInput";
 
 interface User {
   id: string;
@@ -113,10 +114,9 @@ export default function UsersClient({ users }: { users: User[] }) {
                 <td className={td}>
                   {resettingId === u.id ? (
                     <div className="flex flex-col gap-1">
-                      <input
-                        type="password"
-                        className={input}
+                      <PasswordInput
                         placeholder="New password"
+                        autoComplete="new-password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                       />
@@ -178,9 +178,8 @@ export default function UsersClient({ users }: { users: User[] }) {
         </div>
         <div>
           <label className={label}>Password (set by you)</label>
-          <input
-            type="password"
-            className={input}
+          <PasswordInput
+            autoComplete="new-password"
             value={newUser.password}
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
             required

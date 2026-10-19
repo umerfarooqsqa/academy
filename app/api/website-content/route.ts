@@ -16,12 +16,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid content" }, { status: 400 });
   }
   const next = normalizeSiteContent(body);
-  // /terms shows "Last updated" — stamp today's date whenever the terms change (2026-10-15).
+  // /terms and /tutor-agreement show "Last updated" — stamp today's date
+  // whenever their text changes (2026-10-15, tutor agreement 2026-10-19).
   const previous = await getSiteContent();
+  const today = new Date().toISOString().slice(0, 10);
   next.termsUpdatedOn =
-    JSON.stringify(previous.terms) === JSON.stringify(next.terms)
-      ? previous.termsUpdatedOn
-      : new Date().toISOString().slice(0, 10);
+    JSON.stringify(previous.terms) === JSON.stringify(next.terms) ? previous.termsUpdatedOn : today;
+  next.tutorAgreementUpdatedOn =
+    JSON.stringify(previous.tutorAgreement) === JSON.stringify(next.tutorAgreement)
+      ? previous.tutorAgreementUpdatedOn
+      : today;
   await saveSiteContent(next);
-  return NextResponse.json({ ok: true, termsUpdatedOn: next.termsUpdatedOn });
+  return NextResponse.json({
+    ok: true,
+    termsUpdatedOn: next.termsUpdatedOn,
+    tutorAgreementUpdatedOn: next.tutorAgreementUpdatedOn,
+  });
 }

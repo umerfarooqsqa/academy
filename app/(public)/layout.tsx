@@ -233,9 +233,12 @@ export default async function PublicLayout({ children }: { children: React.React
             <p>
               © {year} {content.siteName}. A registered company — part of Suntex Services.
             </p>
-            <div className="flex gap-5">
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
               <Link href="/terms" className="hover:text-slate-300">
                 Terms &amp; Conditions
+              </Link>
+              <Link href="/tutor-agreement" className="hover:text-slate-300">
+                Tutor Agreement
               </Link>
               <Link href="/privacy" className="hover:text-slate-300">
                 Privacy Policy

@@ -8,7 +8,7 @@ import { useState } from "react";
 import { card, input, label, btnPrimary, btnSecondary } from "@/app/components/ui";
 import type { Faq, HowItWorksStep, SiteContent } from "@/lib/siteContent";
 
-type ListKey = "howItWorksSteps" | "faqs" | "testimonials" | "terms";
+type ListKey = "howItWorksSteps" | "faqs" | "testimonials" | "terms" | "tutorAgreement";
 
 function Field({
   title,
@@ -65,8 +65,11 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
       body: JSON.stringify(content),
     });
     const data = await res.json().catch(() => ({}));
-    // The server stamps the terms' "Last updated" date when they change.
+    // The server stamps the terms' and tutor agreement's "Last updated" dates when they change.
     if (typeof data.termsUpdatedOn === "string") setContent((c) => ({ ...c, termsUpdatedOn: data.termsUpdatedOn }));
+    if (typeof data.tutorAgreementUpdatedOn === "string") {
+      setContent((c) => ({ ...c, tutorAgreementUpdatedOn: data.tutorAgreementUpdatedOn }));
+    }
     setBusy(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -235,6 +238,28 @@ export default function WebsiteContentClient({ initial }: { initial: SiteContent
           </div>
         ))}
         <button className={btnSecondary} onClick={() => addItem("terms", { heading: "", body: "" })} type="button">
+          Add section
+        </button>
+      </Group>
+
+      <Group title="Tutor Agreement (/tutor-agreement — tutors must read and agree to this to register)">
+        <p className="-mt-2 text-xs text-gray-500">
+          Last updated {content.tutorAgreementUpdatedOn} — updates by itself when you save changes here. Includes the
+          no-direct-dealing rule (12 months, one month&apos;s fee per student). Each tutor&apos;s exact accepted copy is kept on
+          their profile, so editing this never changes what earlier tutors agreed to. Same format as the terms.{" "}
+          <a href="/tutor-agreement" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            View page ↗
+          </a>
+        </p>
+        {content.tutorAgreement.map((s, i) => (
+          <div key={i} className="flex flex-col gap-1.5 rounded border border-gray-200 p-3">
+            <span className="text-xs font-semibold text-gray-500">Section {i + 1}</span>
+            <input className={input} placeholder="Heading" value={s.heading} onChange={(e) => updateItem("tutorAgreement", i, { heading: e.target.value })} />
+            <textarea className={`${input} min-h-28`} placeholder="Text" value={s.body} onChange={(e) => updateItem("tutorAgreement", i, { body: e.target.value })} />
+            {rowButtons("tutorAgreement", i)}
+          </div>
+        ))}
+        <button className={btnSecondary} onClick={() => addItem("tutorAgreement", { heading: "", body: "" })} type="button">
           Add section
         </button>
       </Group>

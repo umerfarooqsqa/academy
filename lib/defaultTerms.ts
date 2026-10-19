@@ -33,7 +33,8 @@ Tutors are independent — they are not our employees. We check each tutor's ide
   },
   {
     heading: "For tutors",
-    body: `- The information and documents you give us (including your CNIC, marksheets and grades) must be true and your own.
+    body: `- Tutors also agree to our Tutor Agreement (see the "Tutor Agreement" page), which includes the rules on dealing with families we introduce.
+- The information and documents you give us (including your CNIC, marksheets and grades) must be true and your own.
 - Registering is free. When you're placed with a student, a matching fee is taken from the first month's fee — we'll explain the details before you accept a tuition.
 - Be punctual, prepared and professional, and treat students and families with respect.
 - We may decline, pause or remove a tutor profile, for example if information turns out to be untrue or we receive serious complaints.

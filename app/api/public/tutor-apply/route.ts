@@ -21,6 +21,8 @@ import { missingTutorFields, type TutorDraft } from "@/lib/intake/helpers";
 import { extensionForMime, buildDocumentStoragePath } from "@/lib/intake/documents";
 import { uploadToSupabaseStorage } from "@/lib/storage/supabase";
 import { parseCoordPair } from "@/lib/geo/zoneLookup";
+import { getSiteContent } from "@/lib/siteContent";
+import { DOCUMENT_TITLES, agreementPlainText, agreementVersion } from "@/lib/agreementSnapshot";
 
 function parseGradesBySubject(raw: FormDataEntryValue | null): Record<string, string> | null {
   if (typeof raw !== "string" || !raw.trim()) return null;
@@ -56,13 +58,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "A WhatsApp/contact number is required" }, { status: 400 });
   }
   // Tutors must agree to the Terms & Conditions to register (2026-10-15);
-  // when they agreed is recorded on Tutor.termsAcceptedAt below.
+  // when they agreed is recorded on Tutor.termsAcceptedAt below, and since
+  // 2026-10-19 an exact copy of the Tutor Agreement + Terms in TermsAcceptance.
   // Required on the website form (2026-10-17): where the tutor studied.
   if (!((form.get("schoolName") as string | null) ?? "").trim()) {
     return NextResponse.json({ error: "Please tell us which school or college you studied at." }, { status: 400 });
   }
   if (form.get("acceptedTerms") !== "yes") {
-    return NextResponse.json({ error: "Please agree to the Terms & Conditions to register." }, { status: 400 });
+    return NextResponse.json({ error: "Please agree to the Tutor Agreement and Terms & Conditions to register." }, { status: 400 });
+  }
+  // The Tutor Agreement shown on the form (2026-10-19) must be the current
+  // one, so the copy stored as evidence below is exactly what the tutor read.
+  const content = await getSiteContent();
+  const shownVersion = await agreementVersion(content.tutorAgreement);
+  if (form.get("agreementVersion") !== shownVersion) {
+    return NextResponse.json(
+      { error: "Our Tutor Agreement was just updated — please reload the page, read the new version and send again." },
+      { status: 409 },
+    );
   }
 
   const subjectsRaw = form.get("subjects") as string | null;
@@ -132,9 +145,30 @@ export async function POST(req: Request) {
     if (!hasCnic) notes.push("no CNIC image found — verify manually");
   }
 
-  await prisma.tutor.update({
+  const tutor = await prisma.tutor.update({
     where: { whatsappId },
     data: { status, internalNote: notes.filter(Boolean).join("; ") || null, termsAcceptedAt: new Date() },
+    select: { id: true },
+  });
+
+  // Evidence of what was agreed (2026-10-19): an exact copy of each document.
+  const ipAddress = clientIp(req);
+  const userAgent = req.headers.get("user-agent")?.slice(0, 500) ?? null;
+  const accepted = [
+    { document: "tutor_agreement", sections: content.tutorAgreement, updatedOn: content.tutorAgreementUpdatedOn, version: shownVersion },
+    { document: "terms", sections: content.terms, updatedOn: content.termsUpdatedOn, version: await agreementVersion(content.terms) },
+  ] as const;
+  await prisma.termsAcceptance.createMany({
+    data: accepted.map((d) => ({
+      tutorId: tutor.id,
+      document: d.document,
+      version: d.version,
+      updatedOn: d.updatedOn,
+      text: agreementPlainText(DOCUMENT_TITLES[d.document], d.updatedOn, d.sections),
+      whatsappId,
+      ipAddress: ipAddress === "unknown" ? null : ipAddress,
+      userAgent,
+    })),
   });
 
   return NextResponse.json({

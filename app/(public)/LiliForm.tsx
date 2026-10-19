@@ -60,6 +60,7 @@ export default function LiliForm({
   onSubmit,
   initialAnswers,
   agreement,
+  agreementDocument,
 }: {
   steps: StepDef[];
   zones: ZonePoint[];
@@ -70,9 +71,14 @@ export default function LiliForm({
   /** A checkbox the person must tick before "Send" works, e.g. agreeing to
    * the Terms & Conditions on the tutor form (2026-10-15). */
   agreement?: React.ReactNode;
+  /** The full text being agreed to, shown in a scroll box above the
+   * checkbox; the box can only be ticked once it's been scrolled to the end
+   * (Tutor Agreement, 2026-10-19). */
+  agreementDocument?: React.ReactNode;
 }) {
   const [answers, setAnswers] = useState<Answers>(initialAnswers ?? {});
   const [agreed, setAgreed] = useState(false);
+  const [readToEnd, setReadToEnd] = useState(!agreementDocument);
   const [editing, setEditing] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
@@ -197,16 +203,25 @@ export default function LiliForm({
             ) : (
               !finished && (
                 <div className="flex flex-col items-start gap-4">
+                  {agreementDocument && <AgreementBox onReadToEnd={() => setReadToEnd(true)}>{agreementDocument}</AgreementBox>}
                   {agreement && (
-                    <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700 ring-1 ring-slate-200">
+                    <label
+                      className={`flex items-start gap-3 rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700 ring-1 ring-slate-200 ${
+                        readToEnd ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={agreed}
+                        disabled={!readToEnd}
                         onChange={(e) => setAgreed(e.target.checked)}
                         className="mt-0.5 h-5 w-5 shrink-0 accent-rose-600"
                       />
                       <span>{agreement}</span>
                     </label>
+                  )}
+                  {agreement && !readToEnd && (
+                    <p className="-mt-2 text-sm font-medium text-rose-700">Please scroll to the end of the agreement above to continue.</p>
                   )}
                   <button
                     type="button"
@@ -222,6 +237,34 @@ export default function LiliForm({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Scrollable box for the text being agreed to; reports once it has been
+ * scrolled to the bottom (or immediately, if it all fits without scrolling). */
+function AgreementBox({ children, onReadToEnd }: { children: React.ReactNode; onReadToEnd: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const reported = useRef(false);
+  function check() {
+    const el = ref.current;
+    if (!el || reported.current) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 24) {
+      reported.current = true;
+      onReadToEnd();
+    }
+  }
+  useEffect(check);
+  return (
+    <div
+      ref={ref}
+      onScroll={check}
+      tabIndex={0}
+      role="region"
+      aria-label="Agreement text"
+      className="max-h-[26rem] w-full overflow-y-auto rounded-xl bg-white p-5 ring-1 ring-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+    >
+      {children}
     </div>
   );
 }

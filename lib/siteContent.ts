@@ -13,6 +13,7 @@
 
 import { prisma } from "@/lib/db";
 import { DEFAULT_TERMS, type TermsSection } from "@/lib/defaultTerms";
+import { DEFAULT_TUTOR_AGREEMENT } from "@/lib/defaultTutorAgreement";
 
 export type { TermsSection };
 
@@ -64,6 +65,11 @@ export interface SiteContent {
   /** YYYY-MM-DD shown as "Last updated" on /terms — stamped automatically
    * whenever the terms are saved with changes (app/api/website-content). */
   termsUpdatedOn: string;
+  /** /tutor-agreement — what tutors must read and agree to before registering,
+   * incl. the no-direct-dealing rule (2026-10-19). Body format: lib/legalText.ts. */
+  tutorAgreement: TermsSection[];
+  /** "Last updated" on /tutor-agreement — stamped like termsUpdatedOn. */
+  tutorAgreementUpdatedOn: string;
 }
 
 // Copy keeps the real substance of CLAUDE.md Section 11's brand positioning
@@ -177,6 +183,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   facebookUrl: "https://www.facebook.com/Lilitutoracademy/",
   terms: DEFAULT_TERMS,
   termsUpdatedOn: "2026-10-15",
+  tutorAgreement: DEFAULT_TUTOR_AGREEMENT,
+  tutorAgreementUpdatedOn: "2026-10-19",
 };
 
 // Values that were defaults before (the 2026-10-15 redesign and SEO work): a
@@ -189,6 +197,13 @@ const OLD_DEFAULTS: Partial<Record<keyof SiteContent, string[]>> = {
   ],
   heroHeadline: ["The right tutor is closer than you think."],
 };
+
+function normalizeSections(value: unknown, fallback: TermsSection[]): TermsSection[] {
+  if (!Array.isArray(value)) return fallback;
+  return value
+    .filter((s) => s && typeof s === "object")
+    .map((s) => ({ heading: String(s.heading ?? ""), body: String(s.body ?? "") }));
+}
 
 /** Saved JSON (possibly from an older version) → complete SiteContent. Pure. */
 export function normalizeSiteContent(parsed: Record<string, unknown>): SiteContent {
@@ -203,12 +218,10 @@ export function normalizeSiteContent(parsed: Record<string, unknown>): SiteConte
   if (!Array.isArray(merged.howItWorksSteps)) merged.howItWorksSteps = DEFAULT_SITE_CONTENT.howItWorksSteps;
   if (!Array.isArray(merged.faqs)) merged.faqs = DEFAULT_SITE_CONTENT.faqs;
   if (!Array.isArray(merged.testimonials)) merged.testimonials = [];
-  if (!Array.isArray(merged.terms)) merged.terms = DEFAULT_TERMS;
-  merged.terms = merged.terms
-    .filter((s) => s && typeof s === "object")
-    .map((s) => ({ heading: String(s.heading ?? ""), body: String(s.body ?? "") }));
-  if (typeof merged.termsUpdatedOn !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(merged.termsUpdatedOn)) {
-    merged.termsUpdatedOn = DEFAULT_SITE_CONTENT.termsUpdatedOn;
+  merged.terms = normalizeSections(merged.terms, DEFAULT_TERMS);
+  merged.tutorAgreement = normalizeSections(merged.tutorAgreement, DEFAULT_TUTOR_AGREEMENT);
+  for (const key of ["termsUpdatedOn", "tutorAgreementUpdatedOn"] as const) {
+    if (typeof merged[key] !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(merged[key])) merged[key] = DEFAULT_SITE_CONTENT[key];
   }
   return merged;
 }

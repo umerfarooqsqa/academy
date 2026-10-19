@@ -26,6 +26,7 @@ const PUBLIC_PATHS = [
   "/faq",
   "/contact",
   "/terms", // Terms & Conditions — content edited in /website-content
+  "/tutor-agreement", // Tutor Agreement (2026-10-19) — same, tutors must accept it to register
   "/our-tutors", // featured tutors list + /our-tutors/[id] profiles
   // SEO + GEO (2026-10-15): crawler files, landing pages and the blog.
   "/robots.txt",
