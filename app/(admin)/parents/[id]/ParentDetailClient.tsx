@@ -14,6 +14,7 @@ interface ParentDetailProps {
     opportunityCode: string | null;
     publicHiddenAt: Date | null;
     facebookPostedAt: Date | null;
+    facebookStoryPostedAt: Date | null;
   };
   campaigns: Array<{ id: string; name: string }>;
   matches: Array<{ id: string; score: number; status: string; tutor: { name: string } }>;
@@ -104,6 +105,7 @@ export default function ParentDetailClient({ parent, campaigns, matches }: Paren
             <span className={badge("green")}>Listed</span>
           )}{" "}
           {parent.facebookPostedAt && <span className={badge("gray")}>Posted to Facebook</span>}
+          {parent.facebookStoryPostedAt && <span className={badge("gray")}>Story posted</span>}
         </p>
         <button className={`${btnSecondary} mt-3`} disabled={busy} onClick={() => setPublicHidden(!parent.publicHiddenAt)}>
           {parent.publicHiddenAt ? "Show on public listings" : "Hide from public"}

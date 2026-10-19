@@ -188,7 +188,7 @@ export async function unmatchMatch(
   });
   await prisma.parentRequest.update({
     where: { id: before.parentRequestId },
-    data: { facebookPostedAt: null, ...(live === 0 ? { status: "pending" } : {}) },
+    data: { facebookPostedAt: null, facebookStoryPostedAt: null, ...(live === 0 ? { status: "pending" } : {}) },
   });
 
   return updated;

@@ -179,6 +179,9 @@ model ParentRequest {
   opportunityCode  String?   @unique
   publicHiddenAt   DateTime?
   facebookPostedAt DateTime?
+  // When this tuition's own picture was posted as a Facebook Page Story
+  // (2026-10-19) — after the Page post; failures are retried next run.
+  facebookStoryPostedAt DateTime?
   // Set when the parent came through "Request this tutor" on a featured
   // tutor's profile (2026-10-15) — a Match with that tutor is proposed too.
   preferredTutorId String?

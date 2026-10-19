@@ -31,7 +31,7 @@ export interface OpportunityListing {
   availability?: string[];
 }
 
-function groupLabel(g: string): string {
+export function groupLabel(g: string): string {
   return SUBJECT_GROUP_LABELS[g as SubjectGroup] ?? g;
 }
 
@@ -56,7 +56,7 @@ export function formatOpportunityCopyText(listing: OpportunityListing, opportuni
   return `📌 ${subjects} tutor needed — ${where}\n${groupLabel(listing.subjectGroup)} · ${listing.curriculum}${school}\n${action}`;
 }
 
-const TIME_LABELS: Record<string, string> = {
+export const TIME_LABELS: Record<string, string> = {
   weekday_morning: "Weekday mornings",
   weekday_afternoon: "Weekday afternoons",
   weekday_evening: "Weekday evenings",
@@ -69,7 +69,7 @@ const NUMBER_EMOJI = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6�
 
 /** "urdu" → "Urdu", "class 5" → "Class 5"; leaves deliberately-cased words
  * ("A-levels", "FSc", "BS") alone. */
-function tidy(text: string): string {
+export function tidy(text: string): string {
   return text
     .trim()
     .split(/\s+/)
