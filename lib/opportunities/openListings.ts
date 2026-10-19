@@ -14,6 +14,7 @@
 //     placed with it (a match selected / demo scheduled / paid / completed)
 //     — ignoring matches that were rejected or unmatched
 
+import { groupsOf } from "@/lib/subjectGroups";
 import type { OpportunityListing } from "@/lib/opportunities/formatText";
 
 export const OPPORTUNITY_MAX_AGE_DAYS = 14;
@@ -34,6 +35,7 @@ export interface RequestRow {
   createdAt: Date;
   subjects: string[];
   subjectGroup: string;
+  subjectGroups?: string[];
   curriculum: string;
   schoolName?: string | null;
   area: string;
@@ -70,6 +72,7 @@ export function toListing(r: RequestRow, zones: ZoneRow[]): OpportunityListing {
     opportunityCode: r.opportunityCode!,
     subjects: r.subjects,
     subjectGroup: r.subjectGroup,
+    subjectGroups: groupsOf(r),
     curriculum: r.curriculum,
     schoolName: r.schoolName ?? null,
     area: r.area,

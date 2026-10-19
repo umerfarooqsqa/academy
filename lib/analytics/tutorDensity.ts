@@ -2,6 +2,8 @@
 // already-fetched rows — no geocoding, no per-tutor pins (privacy: only zone
 // centroids and counts are exposed).
 
+import { groupsOf } from "@/lib/subjectGroups";
+
 export interface AreaZoneRow {
   name: string;
   latitude: number;
@@ -12,6 +14,7 @@ export interface TutorDensityInput {
   status: string;
   area: string;
   subjectGroup: string;
+  subjectGroups?: string[];
   tier: string;
 }
 
@@ -34,7 +37,7 @@ export function computeTutorDensity(
 ): TutorDensityResult[] {
   const active = tutors.filter((t) => {
     if (t.status !== "active") return false;
-    if (filters.subjectGroup && t.subjectGroup !== filters.subjectGroup) return false;
+    if (filters.subjectGroup && !groupsOf(t).includes(filters.subjectGroup)) return false;
     if (filters.tier && t.tier !== filters.tier) return false;
     return true;
   });

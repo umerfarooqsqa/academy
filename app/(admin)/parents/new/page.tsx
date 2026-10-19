@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
+import CategoryPicker from "@/app/components/CategoryPicker";
 import { card, input, label, btnPrimary, pageTitle } from "@/app/components/ui";
 
 export default function NewParentPage() {
@@ -13,7 +13,7 @@ export default function NewParentPage() {
     whatsappId: "",
     studentInfo: "",
     subjects: "",
-    subjectGroup: "other",
+    subjectGroups: ["other"] as string[],
     curriculum: "",
     area: "",
     budget: "",
@@ -63,14 +63,8 @@ export default function NewParentPage() {
           <input className={input} value={form.subjects} onChange={(e) => setForm({ ...form, subjects: e.target.value })} />
         </div>
         <div>
-          <label className={label}>Subject group</label>
-          <select className={input} value={form.subjectGroup} onChange={(e) => setForm({ ...form, subjectGroup: e.target.value })}>
-            {SUBJECT_GROUPS.map((g) => (
-              <option key={g} value={g}>
-                {SUBJECT_GROUP_LABELS[g as SubjectGroup]}
-              </option>
-            ))}
-          </select>
+          <label className={label}>Categories</label>
+          <CategoryPicker value={form.subjectGroups} onChange={(subjectGroups) => setForm({ ...form, subjectGroups })} />
         </div>
         <div>
           <label className={label}>Curriculum</label>

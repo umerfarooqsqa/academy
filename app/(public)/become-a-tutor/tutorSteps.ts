@@ -5,6 +5,8 @@
 // latitude/longitude.
 
 import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS } from "@/lib/subjectGroups";
+import { describeIssues } from "@/lib/imageQuality";
+import { photoReport } from "../photoQuality";
 import {
   AVAILABILITY_OPTIONS,
   collectGrades,
@@ -15,6 +17,7 @@ import {
   type Answers,
   type LocationAnswer,
   type StepDef,
+  selectedGroups,
 } from "../liliFormFlow";
 
 function firstName(answers: Answers): string {
@@ -57,17 +60,20 @@ export const TUTOR_STEPS: StepDef[] = [
       "Where are you based? Share your location so we match you with students close by — you'll save on travel time and fuel.",
   },
   {
-    kind: "text",
+    // Numbered list, one subject per row (2026-10-19).
+    kind: "list",
     id: "subjects",
     label: "Subjects you teach",
-    prompt: "Which subject(s) do you teach?",
-    placeholder: "e.g. Chemistry, Biology",
+    prompt: "Which subject(s) do you teach? Add them one by one.",
+    placeholder: "e.g. Chemistry",
+    addLabel: "Add another subject",
   },
   {
-    kind: "chips",
+    // Several categories allowed (2026-10-19).
+    kind: "multiChips",
     id: "subjectGroup",
-    label: "Category",
-    prompt: "Which category best fits?",
+    label: "Categories",
+    prompt: "Which categories do you teach? Pick all that apply.",
     options: SUBJECT_GROUPS.map((g) => ({ value: g, label: SUBJECT_GROUP_LABELS[g] })),
   },
   {
@@ -123,6 +129,7 @@ export const TUTOR_STEPS: StepDef[] = [
     label: "CNIC photo",
     prompt:
       "Almost done! To verify your profile, please send a photo of your CNIC. (Recommended — we need it to activate your profile.)",
+    qualityCheck: true,
   },
   {
     kind: "files",
@@ -130,6 +137,7 @@ export const TUTOR_STEPS: StepDef[] = [
     label: "Marksheet / transcript",
     prompt: "And your latest marksheet/transcript, if you have it handy? This helps us confirm the grades you shared.",
     multiple: true,
+    qualityCheck: true,
   },
 ];
 
@@ -145,7 +153,7 @@ export function buildTutorFormData(answers: Answers): FormData {
     body.append("longitude", String(location.longitude));
   }
   body.append("subjects", String(answers.subjects ?? ""));
-  body.append("subjectGroup", String(answers.subjectGroup ?? "other"));
+  for (const group of selectedGroups(answers.subjectGroup)) body.append("subjectGroup", group);
   body.append("curriculum", String(answers.curriculum ?? "").trim());
   body.append("qualification", String(answers.qualification ?? "").trim());
   body.append("schoolName", String(answers.schoolName ?? "").trim());
@@ -156,5 +164,15 @@ export function buildTutorFormData(answers: Answers): FormData {
   const cnic = (answers.cnic as File[] | null) ?? [];
   if (cnic[0]) body.append("cnic", cnic[0]);
   for (const file of (answers.marksheets as File[] | null) ?? []) body.append("marksheets", file);
+  // Photos the on-device check flagged but the tutor used anyway (2026-10-19) —
+  // shown to the operator as a note on the tutor.
+  const flagged = [
+    ...cnic.slice(0, 1).map((f) => ["CNIC photo", f] as const),
+    ...((answers.marksheets as File[] | null) ?? []).map((f, i, all) => [all.length > 1 ? `marksheet photo ${i + 1}` : "marksheet photo", f] as const),
+  ]
+    .map(([what, f]) => ({ what, issues: photoReport(f)?.issues ?? [] }))
+    .filter((p) => p.issues.length > 0)
+    .map((p) => `${p.what} ${describeIssues(p.issues)}`);
+  if (flagged.length) body.append("photoQualityNote", flagged.join("; "));
   return body;
 }

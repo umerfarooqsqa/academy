@@ -36,6 +36,17 @@ describe("verifiedNear", () => {
     expect(verifiedNear(counts, 24.925, 67.1, "computer").total).toBe(1);
   });
 
+  it("counts a tutor with several categories once over a multi-category search (2026-10-19)", () => {
+    const multi = countVerifiedByZone(zones, [
+      { area: "Gulshan-e-Iqbal", subjectGroup: "pre_medical", subjectGroups: ["pre_medical", "school"] },
+      { area: "Gulshan-e-Iqbal", subjectGroup: "school", subjectGroups: ["school"] },
+      { area: "Gulshan-e-Iqbal", subjectGroup: "computer", subjectGroups: ["computer"] },
+    ]);
+    expect(verifiedNear(multi, 24.925, 67.1, ["school", "pre_medical"]).total).toBe(2);
+    expect(verifiedNear(multi, 24.925, 67.1, "pre_medical").total).toBe(1);
+    expect(multi[0].bySubjectGroup).toEqual({ pre_medical: 1, school: 2, computer: 1 });
+  });
+
   it("is zero far from every zone, but still names the nearest zone", () => {
     expect(verifiedNear(counts, 31.52, 74.36)).toMatchObject({ total: 0, nearestZone: expect.any(String) });
   });

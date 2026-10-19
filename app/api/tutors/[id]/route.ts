@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { categoryFields } from "@/lib/subjectGroups";
 import { prisma } from "@/lib/db";
 import { computeLiveTier } from "@/lib/tutors/tier";
 import { parsePublicProfilePatch } from "@/lib/tutors/publicProfile";
@@ -28,7 +29,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     "qualification",
     "schoolName",
     "subjects",
-    "subjectGroup",
     "curriculum",
     "gradesBySubject",
     "area",
@@ -53,6 +53,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (typeof body.cnicVerified === "boolean") data.cnicVerifiedAt = body.cnicVerified ? new Date() : null;
   if ("cnicImageUrl" in body) data.cnicVerifiedAt = null;
   if ("gender" in body) data.gender = normalizeGender(body.gender);
+  // Categories (several allowed since 2026-10-19) — at least one.
+  if ("subjectGroups" in body || "subjectGroup" in body) {
+    const groups = categoryFields(body);
+    if (!groups) return NextResponse.json({ error: "Pick at least one category" }, { status: 400 });
+    Object.assign(data, groups);
+  }
 
   // Public "Featured tutors" profile (2026-10-15) — validated and length-capped.
   const profile = parsePublicProfilePatch(body);

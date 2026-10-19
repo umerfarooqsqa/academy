@@ -47,6 +47,10 @@ model Tutor {
   subjectGroup       String // "pre_medical" | "pre_engineering" | "computer" | "skills" |
   // "university_level" | "other" — 6.1 step 8. This is the hard-filter
   // field in matching (6.3 Step 1); `curriculum` below is descriptive only.
+  // 2026-10-19: a tutor can have several categories — all of them are in
+  // subjectGroups (matching needs one in common with the parent's);
+  // subjectGroup above is the first one, kept for reports.
+  subjectGroups      String[]  @default([])
   curriculum         String // free-text board/level, e.g. "Cambridge A-levels", "FSc Pre-Medical"
   gradesBySubject    Json? // self-reported, e.g. {"Biology": "A"} — 6.1 step 9, scored in 6.3 Step 4
   cnicImageUrl       String? // Supabase Storage URL — verification only, never OCR'd (6.1 step 10)
@@ -146,6 +150,9 @@ model ParentRequest {
   studentInfo  String?
   subjects     String[]
   subjectGroup String // same fixed set as Tutor.subjectGroup — the matching hard filter (6.3 Step 1)
+  // 2026-10-19: every category the parent picked (matching needs one in
+  // common with the tutor's); subjectGroup above is the first one.
+  subjectGroups String[] @default([])
   curriculum   String
   area         String
   // Not in CLAUDE.md Section 5 — added for the Google-Maps-location-link

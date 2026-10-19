@@ -24,6 +24,11 @@ import { chipActiveClass, chipClass, inputClass, linkClass, primaryClass, second
 
 type Located = OpportunityListing & { near: boolean; distanceKm?: number };
 
+// A listing can have several categories (2026-10-19) — it shows under each.
+function groupsOfListing(l: OpportunityListing): string[] {
+  return l.subjectGroups?.length ? l.subjectGroups : [l.subjectGroup];
+}
+
 function groupLabel(g: string) {
   return SUBJECT_GROUP_LABELS[g as SubjectGroup] ?? g;
 }
@@ -42,8 +47,11 @@ export default function OpportunitiesClient({ listings, areas }: { listings: Opp
   const [group, setGroup] = useState<string>("all");
   const [showFurther, setShowFurther] = useState(false);
 
-  const groups = useMemo(() => [...new Set(listings.map((l) => l.subjectGroup))], [listings]);
-  const filtered = useMemo(() => (group === "all" ? listings : listings.filter((l) => l.subjectGroup === group)), [listings, group]);
+  const groups = useMemo(() => [...new Set(listings.flatMap(groupsOfListing))], [listings]);
+  const filtered = useMemo(
+    () => (group === "all" ? listings : listings.filter((l) => groupsOfListing(l).includes(group))),
+    [listings, group],
+  );
 
   const located: Located[] = useMemo(() => {
     if (!location) return [];
@@ -192,7 +200,7 @@ function OpportunityCard({ listing }: { listing: OpportunityListing & { distance
     <article className="flex flex-col rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-200">
-          {groupLabel(listing.subjectGroup)}
+          {groupsOfListing(listing).map(groupLabel).join(" · ")}
         </span>
         <span className="text-xs text-slate-400" suppressHydrationWarning>
           {postedAgo(listing.publishedAt)}

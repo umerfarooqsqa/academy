@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { categoryFields } from "@/lib/subjectGroups";
 import { prisma } from "@/lib/db";
 import { computeLiveTier } from "@/lib/tutors/tier";
 
@@ -28,10 +29,12 @@ export async function GET(req: Request) {
 // flow (6.1), useful while Phase 0 (Meta setup) is still blocked.
 export async function POST(req: Request) {
   const body = await req.json();
-  const required = ["whatsappId", "name", "qualification", "subjectGroup", "curriculum", "area"];
+  const required = ["whatsappId", "name", "qualification", "curriculum", "area"];
   for (const f of required) {
     if (!body[f]) return NextResponse.json({ error: `${f} is required` }, { status: 400 });
   }
+  const groups = categoryFields(body);
+  if (!groups) return NextResponse.json({ error: "Pick at least one category" }, { status: 400 });
 
   const tutor = await prisma.tutor.create({
     data: {
@@ -41,7 +44,7 @@ export async function POST(req: Request) {
       phone: body.phone ?? null,
       qualification: body.qualification,
       subjects: body.subjects ?? [],
-      subjectGroup: body.subjectGroup,
+      ...groups,
       curriculum: body.curriculum,
       gradesBySubject: body.gradesBySubject ?? undefined,
       area: body.area,

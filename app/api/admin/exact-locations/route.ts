@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   const [zones, requests, tutors] = await Promise.all([
     prisma.areaZone.findMany(),
     prisma.parentRequest.findMany({
-      where: { latitude: { not: null }, longitude: { not: null }, ...(subjectGroup ? { subjectGroup } : {}) },
+      where: { latitude: { not: null }, longitude: { not: null }, ...(subjectGroup ? { subjectGroups: { has: subjectGroup } } : {}) },
       select: {
         latitude: true,
         longitude: true,
@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       },
     }),
     prisma.tutor.findMany({
-      where: { status: "active", latitude: { not: null }, longitude: { not: null }, ...(subjectGroup ? { subjectGroup } : {}) },
+      where: { status: "active", latitude: { not: null }, longitude: { not: null }, ...(subjectGroup ? { subjectGroups: { has: subjectGroup } } : {}) },
       select: { latitude: true, longitude: true, area: true, name: true, subjects: true, subscriptions: true },
     }),
   ]);

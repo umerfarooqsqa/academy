@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { categoryFields } from "@/lib/subjectGroups";
 import { prisma } from "@/lib/db";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -17,7 +18,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const editable = [
     "studentInfo",
     "subjects",
-    "subjectGroup",
     "curriculum",
     "area",
     "budget",
@@ -29,6 +29,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   ] as const;
   const data: Record<string, unknown> = {};
   for (const f of editable) if (f in body) data[f] = body[f];
+  // Categories (several allowed since 2026-10-19) — at least one.
+  if ("subjectGroups" in body || "subjectGroup" in body) {
+    const groups = categoryFields(body);
+    if (!groups) return NextResponse.json({ error: "Pick at least one category" }, { status: 400 });
+    Object.assign(data, groups);
+  }
   // "Hide from public" — keeps the request off /opportunities and the Facebook
   // Page (2026-10-15: every open request is public by default).
   if (typeof body.publicHidden === "boolean") data.publicHiddenAt = body.publicHidden ? new Date() : null;

@@ -12,6 +12,7 @@
 // guessing from order.
 
 import { NextResponse } from "next/server";
+import { normalizeGroups } from "@/lib/subjectGroups";
 import { normalizeGender } from "@/lib/tutors/gender";
 import { allowAttempt, clientIp, HOUR } from "@/lib/security/rateLimit";
 import { prisma } from "@/lib/db";
@@ -85,7 +86,9 @@ export async function POST(req: Request) {
     name: (form.get("name") as string | null) || null,
     area: (form.get("area") as string | null) || null,
     subjects: subjectsRaw ? subjectsRaw.split(",").map((s) => s.trim()).filter(Boolean) : null,
-    subjectGroup: (form.get("subjectGroup") as string | null) || null,
+    // Several categories allowed (2026-10-19): one "subjectGroup" field per pick.
+    subjectGroups: normalizeGroups(form.getAll("subjectGroup")),
+    subjectGroup: normalizeGroups(form.getAll("subjectGroup"))[0] ?? null,
     curriculum: (form.get("curriculum") as string | null) || null,
     qualification: (form.get("qualification") as string | null) || null,
     gradesBySubject: parseGradesBySubject(form.get("gradesBySubject")),
@@ -136,6 +139,9 @@ export async function POST(req: Request) {
 
   const missing = missingTutorFields(draft);
   const notes = [...uploadIssues];
+  // Flagged by the on-device photo check, used anyway (2026-10-19).
+  const photoQuality = ((form.get("photoQualityNote") as string | null) ?? "").trim().slice(0, 300);
+  if (photoQuality) notes.push(`photo may be hard to read — ${photoQuality} — check`);
   let status: "active" | "pending";
   if (missing.length === 0 && hasCnic) {
     status = "active";

@@ -21,9 +21,9 @@ export const metadata: Metadata = {
 export default async function OurTutorsPage({ searchParams }: { searchParams: Promise<{ group?: string }> }) {
   const { group } = await searchParams;
   const tutors = await getFeaturedTutors();
-  const groups = SUBJECT_GROUPS.filter((g) => tutors.some((t) => t.subjectGroup === g));
+  const groups = SUBJECT_GROUPS.filter((g) => tutors.some((t) => t.subjectGroups.includes(g)));
   const active = group && groups.includes(group as (typeof groups)[number]) ? group : null;
-  const shown = active ? tutors.filter((t) => t.subjectGroup === active) : tutors;
+  const shown = active ? tutors.filter((t) => t.subjectGroups.includes(active)) : tutors;
 
   return (
     <>

@@ -8,6 +8,8 @@ export interface OpportunityListing {
   opportunityCode: string;
   subjects: string[];
   subjectGroup: string;
+  /** Every category of the request (2026-10-19); subjectGroup is the first. */
+  subjectGroups?: string[];
   curriculum: string;
   /** The student's school (2026-10-17 — operator chose to show it publicly). */
   schoolName?: string | null;
@@ -29,6 +31,11 @@ export interface OpportunityListing {
   publishedAt: string;
   /** Preferred times from the fixed tag set (6.2), e.g. "weekday_evening" — not contact info. */
   availability?: string[];
+}
+
+/** "Pre-Medical, School (Primary–Matric)" — all of a listing's categories. */
+export function listingGroupsLabel(listing: Pick<OpportunityListing, "subjectGroup" | "subjectGroups">): string {
+  return (listing.subjectGroups?.length ? listing.subjectGroups : [listing.subjectGroup]).map(groupLabel).join(", ");
 }
 
 export function groupLabel(g: string): string {
@@ -53,7 +60,7 @@ export function formatOpportunityCopyText(listing: OpportunityListing, opportuni
     ? `Interested? Tap "I'm interested" on ${listing.opportunityCode} at ${opportunitiesUrl}`
     : `Interested? Tap "I'm interested" on ${listing.opportunityCode} on our Opportunities page.`;
   const school = listing.schoolName ? ` · ${listing.schoolName}` : "";
-  return `📌 ${subjects} tutor needed — ${where}\n${groupLabel(listing.subjectGroup)} · ${listing.curriculum}${school}\n${action}`;
+  return `📌 ${subjects} tutor needed — ${where}\n${listingGroupsLabel(listing)} · ${listing.curriculum}${school}\n${action}`;
 }
 
 export const TIME_LABELS: Record<string, string> = {
@@ -103,7 +110,7 @@ export function formatTuitionsPost(listings: OpportunityListing[], siteUrl: stri
   const single = listings.length === 1;
   const blocks = listings.map((l, i) => {
     const subjects = l.subjects.map(tidy).join(", ") || "Tutor";
-    const level = tidy(l.curriculum) || groupLabel(l.subjectGroup);
+    const level = tidy(l.curriculum) || listingGroupsLabel(l);
     const mode =
       l.deliveryMode === "online" ? "💻 Online" : l.deliveryMode === "both" ? "🏠 Home or 💻 online" : "🏠 Home tuition";
     const where = l.deliveryMode === "online" ? mode : `📍 ${tidy(l.area)} · ${mode}`;

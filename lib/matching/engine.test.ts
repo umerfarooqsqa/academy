@@ -54,6 +54,24 @@ describe("runMatchingEngine — Step 1 hard filters (CLAUDE.md 6.3)", () => {
     expect(result).toHaveLength(0);
   });
 
+  it("matches when tutor and parent share one of several categories (2026-10-19)", () => {
+    const result = runMatchingEngine(
+      parent({ subjectGroup: "school", subjectGroups: ["school", "pre_medical"] }),
+      [tutor({ subjectGroup: "pre_engineering", subjectGroups: ["pre_engineering", "pre_medical"] })],
+      zones,
+    );
+    expect(result).toHaveLength(1);
+  });
+
+  it("excludes a tutor whose categories share none with the parent's", () => {
+    const result = runMatchingEngine(
+      parent({ subjectGroups: ["pre_medical", "school"] }),
+      [tutor({ subjectGroup: "computer", subjectGroups: ["computer", "skills"] })],
+      zones,
+    );
+    expect(result).toHaveLength(0);
+  });
+
   it("excludes an inactive/pending tutor", () => {
     const result = runMatchingEngine(parent({}), [tutor({ status: "pending" })], zones);
     expect(result).toHaveLength(0);

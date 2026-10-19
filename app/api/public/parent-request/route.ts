@@ -6,6 +6,7 @@
 // missing-budget note) + lib/matching/run.ts#runMatchingForParent.
 
 import { NextResponse } from "next/server";
+import { normalizeGroups } from "@/lib/subjectGroups";
 import { allowAttempt, clientIp, HOUR } from "@/lib/security/rateLimit";
 import { createParentRequest, fillAreaFromPreciseLocation } from "@/lib/intake/persist";
 import { resolveCampaignRef } from "@/lib/campaigns/ref";
@@ -29,7 +30,9 @@ export async function POST(req: Request) {
   const draft: ParentDraft = {
     studentInfo: body.studentInfo || null,
     subjects: Array.isArray(body.subjects) ? body.subjects.filter(Boolean) : null,
-    subjectGroup: body.subjectGroup || null,
+    // Several categories allowed (2026-10-19); older clients send one string.
+    subjectGroups: normalizeGroups(body.subjectGroups ?? body.subjectGroup),
+    subjectGroup: normalizeGroups(body.subjectGroups ?? body.subjectGroup)[0] ?? null,
     curriculum: body.curriculum || null,
     area: body.area || null,
     budget: body.budget ? Number(body.budget) : null,

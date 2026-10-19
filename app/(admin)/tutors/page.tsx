@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { computeLiveTier } from "@/lib/tutors/tier";
-import { SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
+import { groupLabels, groupsOf } from "@/lib/subjectGroups";
 import { pageTitle, table, th, td, badge, statusTone, input, btnPrimary } from "@/app/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -71,7 +71,7 @@ export default async function TutorsPage({
                 <td className={td}>
                   <div>{t.subjects.join(", ") || "—"}</div>
                   <div className="text-xs text-gray-500">
-                    {SUBJECT_GROUP_LABELS[t.subjectGroup as SubjectGroup] ?? t.subjectGroup}
+                    {groupLabels(groupsOf(t))}
                   </div>
                 </td>
                 <td className={td}>{t.area}</td>

@@ -22,6 +22,7 @@ export async function GET(req: Request) {
     status: t.status,
     area: t.area,
     subjectGroup: t.subjectGroup,
+    subjectGroups: t.subjectGroups,
     tier: computeLiveTier(t.subscriptions),
   }));
 

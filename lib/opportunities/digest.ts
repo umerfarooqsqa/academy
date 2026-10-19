@@ -46,6 +46,7 @@ function fetchRequests(
       createdAt: true,
       subjects: true,
       subjectGroup: true,
+      subjectGroups: true,
       curriculum: true,
       schoolName: true,
       area: true,

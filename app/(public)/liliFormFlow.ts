@@ -49,9 +49,15 @@ export type Step =
       validate?: (value: string) => string | null;
     })
   | (StepBase & { kind: "chips"; options: Option[] })
+  /** A numbered list, one entry per row (e.g. subjects, 2026-10-19). The
+   * answer is the entries joined with ", " — the same string a comma-separated
+   * text answer gives, so splitSubjects and the routes work unchanged. */
+  | (StepBase & { kind: "list"; placeholder?: string; addLabel: string })
   | (StepBase & { kind: "multiChips"; options: Option[]; optional?: boolean })
   | (StepBase & { kind: "location" })
-  | (StepBase & { kind: "files"; multiple?: boolean });
+  /** qualityCheck: grade each chosen photo on the device (blur, darkness,
+   * size) and warn before it's used (2026-10-19, app/(public)/photoQuality.ts). */
+  | (StepBase & { kind: "files"; multiple?: boolean; qualityCheck?: boolean });
 
 /** Expands into one text step per subject listed in `subjectsFrom`'s answer,
  * with ids `${id}:${subject}`. */
@@ -121,6 +127,10 @@ export function formatAnswer(step: Step, value: FormValue): string {
   switch (step.kind) {
     case "chips":
       return step.options.find((o) => o.value === value)?.label ?? String(value);
+    case "list":
+      return splitSubjects(value)
+        .map((item, i) => `${i + 1}. ${item}`)
+        .join("\n");
     case "multiChips": {
       const tags = value as string[];
       if (tags.length === 0) return "—";
@@ -138,6 +148,13 @@ export function formatAnswer(step: Step, value: FormValue): string {
     default:
       return String(value);
   }
+}
+
+/** The categories picked on a multi-select category step (a single string from
+ * a preselected /subjects link counts too). */
+export function selectedGroups(value: FormValue | undefined): string[] {
+  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === "string");
+  return typeof value === "string" && value ? [value] : [];
 }
 
 /** The grades:* answers for the current subjects, as the routes' gradesBySubject shape. */

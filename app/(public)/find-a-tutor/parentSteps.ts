@@ -17,6 +17,7 @@ import {
   type Answers,
   type LocationAnswer,
   type StepDef,
+  selectedGroups,
 } from "../liliFormFlow";
 
 /** "Good news — N verified … tutors near X! " for the parent's chosen
@@ -28,28 +29,32 @@ export function verifiedTutorsLine(answers: Answers, counts: ZoneTutorCount[]): 
   const lat = loc.latitude ?? zone?.latitude;
   const lon = loc.longitude ?? zone?.longitude;
   if (lat == null || lon == null) return "";
-  const group = typeof answers.subjectGroup === "string" ? answers.subjectGroup : undefined;
-  const { total } = verifiedNear(counts, lat, lon, group);
+  const groups = selectedGroups(answers.subjectGroup);
+  const { total } = verifiedNear(counts, lat, lon, groups);
   if (total === 0) return "";
+  const group = groups.length === 1 ? groups[0] : undefined;
   const label = group && group !== "other" ? `${SUBJECT_GROUP_LABELS[group as SubjectGroup] ?? group} ` : "";
   return `Good news — ${total} verified ${label}tutor${total === 1 ? "" : "s"} near ${zone ? zone.name : loc.area}! `;
 }
 
 export const makeParentSteps = (counts: ZoneTutorCount[] = [], opts: { requestedTutorName?: string } = {}): StepDef[] => [
   {
-    kind: "text",
+    // Numbered list, one subject per row (2026-10-19).
+    kind: "list",
     id: "subjects",
+    addLabel: "Add another subject",
     label: "Subjects",
     prompt: opts.requestedTutorName
       ? `Hi! I'm Lili 🦊 You're requesting ${opts.requestedTutorName} — just a few quick questions. Which subject(s) do you need help with?`
       : "Hi! I'm Lili 🦊 Which subject(s) do you need help with?",
-    placeholder: "e.g. Chemistry, Biology",
+    placeholder: "e.g. Chemistry",
   },
   {
-    kind: "chips",
+    // Several categories allowed (2026-10-19).
+    kind: "multiChips",
     id: "subjectGroup",
-    label: "Category",
-    prompt: "Which category fits best?",
+    label: "Categories",
+    prompt: "Which categories fit? Pick all that apply.",
     options: SUBJECT_GROUPS.map((g) => ({ value: g, label: SUBJECT_GROUP_LABELS[g] })),
   },
   {
@@ -138,7 +143,7 @@ export function buildParentPayload(answers: Answers) {
   return {
     whatsappId: String(answers.whatsappId ?? "").trim(),
     subjects: splitSubjects(answers.subjects),
-    subjectGroup: answers.subjectGroup ?? "other",
+    subjectGroups: selectedGroups(answers.subjectGroup),
     curriculum: String(answers.curriculum ?? "").trim(),
     deliveryMode: answers.deliveryMode ?? "in_person",
     tutorGenderPreference: answers.tutorGenderPreference ?? "any",

@@ -7,6 +7,7 @@
 // its centroid.
 
 import { haversineKm } from "@/lib/matching/engine";
+import { groupsOf } from "@/lib/subjectGroups";
 
 export interface ZoneTutorCount {
   name: string;
@@ -14,19 +15,29 @@ export interface ZoneTutorCount {
   longitude: number;
   maxKm: number;
   verified: number;
+  /** Tutors per category — a tutor with several categories counts in each. */
   bySubjectGroup: Record<string, number>;
+  /** Tutors per exact category combination ("pre_medical|school" → 2), so a
+   * search over several categories counts each tutor once (2026-10-19). */
+  byGroupSet: Record<string, number>;
 }
 
 /** Groups already-verified tutors by their zone (Tutor.area is an AreaZone.name). */
 export function countVerifiedByZone(
   zones: { name: string; latitude: number; longitude: number; maxKm: number }[],
-  verifiedTutors: { area: string; subjectGroup: string }[],
+  verifiedTutors: { area: string; subjectGroup: string; subjectGroups?: string[] }[],
 ): ZoneTutorCount[] {
   return zones.map((z) => {
     const here = verifiedTutors.filter((t) => t.area.toLowerCase() === z.name.toLowerCase());
     const bySubjectGroup: Record<string, number> = {};
-    for (const t of here) bySubjectGroup[t.subjectGroup] = (bySubjectGroup[t.subjectGroup] ?? 0) + 1;
-    return { name: z.name, latitude: z.latitude, longitude: z.longitude, maxKm: z.maxKm, verified: here.length, bySubjectGroup };
+    const byGroupSet: Record<string, number> = {};
+    for (const t of here) {
+      const groups = [...new Set(groupsOf(t))].sort();
+      for (const g of groups) bySubjectGroup[g] = (bySubjectGroup[g] ?? 0) + 1;
+      const key = groups.join("|");
+      byGroupSet[key] = (byGroupSet[key] ?? 0) + 1;
+    }
+    return { name: z.name, latitude: z.latitude, longitude: z.longitude, maxKm: z.maxKm, verified: here.length, bySubjectGroup, byGroupSet };
   });
 }
 
@@ -38,7 +49,22 @@ export interface VerifiedNearby {
   bySubjectGroup: Record<string, number>;
 }
 
-export function verifiedNear(counts: ZoneTutorCount[], lat: number, lon: number, subjectGroup?: string): VerifiedNearby {
+/** Verified tutors teaching any of `groups` in one zone (each tutor once). */
+function countInGroups(z: ZoneTutorCount, groups: string[]): number {
+  let n = 0;
+  for (const [key, count] of Object.entries(z.byGroupSet ?? {})) {
+    if (key.split("|").some((g) => groups.includes(g))) n += count;
+  }
+  return n;
+}
+
+export function verifiedNear(
+  counts: ZoneTutorCount[],
+  lat: number,
+  lon: number,
+  subjectGroup?: string | string[],
+): VerifiedNearby {
+  const groups = subjectGroup == null ? [] : Array.isArray(subjectGroup) ? subjectGroup : [subjectGroup];
   let total = 0;
   let nearest: { name: string; d: number } | null = null;
   const bySubjectGroup: Record<string, number> = {};
@@ -46,7 +72,7 @@ export function verifiedNear(counts: ZoneTutorCount[], lat: number, lon: number,
     const d = haversineKm(lat, lon, z.latitude, z.longitude);
     if (!nearest || d < nearest.d) nearest = { name: z.name, d };
     if (d > z.maxKm) continue;
-    total += subjectGroup ? (z.bySubjectGroup[subjectGroup] ?? 0) : z.verified;
+    total += groups.length ? countInGroups(z, groups) : z.verified;
     for (const [g, n] of Object.entries(z.bySubjectGroup)) bySubjectGroup[g] = (bySubjectGroup[g] ?? 0) + n;
   }
   return { total, nearestZone: nearest?.name ?? null, bySubjectGroup };

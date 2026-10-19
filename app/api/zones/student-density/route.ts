@@ -19,6 +19,7 @@ export async function GET(req: Request) {
       select: {
         area: true,
         subjectGroup: true,
+        subjectGroups: true,
         status: true,
         matches: { where: { status: { in: PLACED_MATCH_STATUSES } }, select: { id: true }, take: 1 },
       },
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
 
   const result = computeStudentDensity(
     zones,
-    requests.map((r) => ({ area: r.area, subjectGroup: r.subjectGroup, status: r.status, placed: r.matches.length > 0 })),
+    requests.map((r) => ({ area: r.area, subjectGroup: r.subjectGroup, subjectGroups: r.subjectGroups, status: r.status, placed: r.matches.length > 0 })),
     { subjectGroup, needsTutorOnly },
   );
   return NextResponse.json(result);

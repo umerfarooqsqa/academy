@@ -99,11 +99,11 @@ describe("helpers", () => {
 
 describe("verified tutors line after the parent's location answer", () => {
   const counts = [
-    { name: "Gulshan-e-Iqbal", latitude: 24.9204, longitude: 67.0971, maxKm: 6, verified: 3, bySubjectGroup: { pre_medical: 2, computer: 1 } },
+    { name: "Gulshan-e-Iqbal", latitude: 24.9204, longitude: 67.0971, maxKm: 6, verified: 3, bySubjectGroup: { pre_medical: 2, computer: 1 }, byGroupSet: { pre_medical: 2, computer: 1 } },
   ];
 
   it("names the count for the chosen category and area", () => {
-    const a: Answers = { subjectGroup: "pre_medical", location: { latitude: null, longitude: null, area: "Gulshan-e-Iqbal", viaGps: false } };
+    const a: Answers = { subjectGroup: ["pre_medical"], location: { latitude: null, longitude: null, area: "Gulshan-e-Iqbal", viaGps: false } };
     expect(verifiedTutorsLine(a, counts)).toBe("Good news — 2 verified Pre-Medical tutors near Gulshan-e-Iqbal! ");
     const steps = resolveSteps(makeParentSteps(counts), a);
     const availability = steps.find((s) => s.id === "availability")!;
@@ -113,7 +113,7 @@ describe("verified tutors line after the parent's location answer", () => {
   });
 
   it("says nothing when there are none, or for a typed area that isn't a zone", () => {
-    expect(verifiedTutorsLine({ subjectGroup: "skills", location: { latitude: null, longitude: null, area: "Gulshan-e-Iqbal", viaGps: false } }, counts)).toBe("");
+    expect(verifiedTutorsLine({ subjectGroup: ["skills"], location: { latitude: null, longitude: null, area: "Gulshan-e-Iqbal", viaGps: false } }, counts)).toBe("");
     expect(verifiedTutorsLine({ location: { latitude: null, longitude: null, area: "near Hassan Square", viaGps: false } }, counts)).toBe("");
     expect(verifiedTutorsLine({}, counts)).toBe("");
   });
@@ -123,7 +123,7 @@ describe("payload builders", () => {
   it("builds the parent-request JSON body", () => {
     const answers: Answers = {
       subjects: "Chemistry, Biology",
-      subjectGroup: "pre_medical",
+      subjectGroup: ["pre_medical", "school"],
       curriculum: "FSc",
       schoolName: " The City School ",
       deliveryMode: "in_person",
@@ -138,7 +138,7 @@ describe("payload builders", () => {
     expect(buildParentPayload(answers)).toEqual({
       whatsappId: "03001234567",
       subjects: ["Chemistry", "Biology"],
-      subjectGroup: "pre_medical",
+      subjectGroups: ["pre_medical", "school"],
       curriculum: "FSc",
       deliveryMode: "in_person",
       tutorGenderPreference: "female",
@@ -160,7 +160,7 @@ describe("payload builders", () => {
       gender: "female",
       location: { latitude: null, longitude: null, area: "Malir", viaGps: false },
       subjects: "Biology, Chemistry",
-      subjectGroup: "pre_medical",
+      subjectGroup: ["pre_medical", "university_level"],
       curriculum: "A-levels",
       qualification: "MBBS",
       schoolName: "DJ Science College",
@@ -180,11 +180,18 @@ describe("payload builders", () => {
     expect(fd.get("schoolName")).toBe("DJ Science College");
     expect(fd.get("latitude")).toBeNull();
     expect(fd.get("subjects")).toBe("Biology, Chemistry");
+    expect(fd.getAll("subjectGroup")).toEqual(["pre_medical", "university_level"]);
     expect(JSON.parse(fd.get("gradesBySubject") as string)).toEqual({ Biology: "A", Chemistry: "A-" });
     expect(fd.getAll("availability")).toEqual(["weekend_morning", "weekend_afternoon"]);
     expect(fd.get("expectedFee")).toBeNull();
     expect((fd.get("cnic") as File).name).toBe("cnic.jpg");
     expect(fd.getAll("marksheets")).toEqual([]);
+  });
+
+  it("shows a numbered list answer as numbered lines (2026-10-19)", () => {
+    const subjects = resolveSteps(TUTOR_STEPS, {}).find((s) => s.id === "subjects")!;
+    expect(subjects.kind).toBe("list");
+    expect(formatAnswer(subjects, "Physics, Chemistry")).toBe("1. Physics\n2. Chemistry");
   });
 
   it("sends shared coordinates as strings for the tutor route", () => {

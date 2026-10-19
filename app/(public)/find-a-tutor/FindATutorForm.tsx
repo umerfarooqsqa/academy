@@ -40,7 +40,7 @@ export default function FindATutorForm({
   );
   const initialAnswers = useMemo<Answers>(() => {
     const a: Answers = {};
-    if (initialGroup) a.subjectGroup = initialGroup;
+    if (initialGroup) a.subjectGroup = [initialGroup];
     if (initialMode) a.deliveryMode = initialMode;
     if (initialArea) a.location = { latitude: null, longitude: null, area: initialArea, viaGps: false };
     return a;

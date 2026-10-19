@@ -19,7 +19,7 @@ export const VERIFIED_TUTOR_WHERE = {
 export async function getVerifiedTutorCounts(): Promise<ZoneTutorCount[]> {
   const [zones, tutors] = await Promise.all([
     prisma.areaZone.findMany(),
-    prisma.tutor.findMany({ where: VERIFIED_TUTOR_WHERE, select: { area: true, subjectGroup: true } }),
+    prisma.tutor.findMany({ where: VERIFIED_TUTOR_WHERE, select: { area: true, subjectGroup: true, subjectGroups: true } }),
   ]);
   return countVerifiedByZone(zones, tutors);
 }

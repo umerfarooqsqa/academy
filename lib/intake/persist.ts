@@ -6,6 +6,7 @@ import type { DocKind } from "@/lib/intake/documents";
 import { findNearestZone } from "@/lib/geo/nearestZone";
 import { matchZoneByName } from "@/lib/geo/zoneLookup";
 import { newOpportunityCode } from "@/lib/opportunities/requestCode";
+import { categoryFields } from "@/lib/subjectGroups";
 
 /** Case-insensitive lookup of the AreaZone a free-text area string refers to. */
 export async function resolveZone(area: string) {
@@ -92,7 +93,7 @@ export async function upsertTutor(opts: {
     phone: draft.phone ?? null,
     qualification: draft.qualification ?? "",
     subjects: draft.subjects ?? [],
-    subjectGroup: draft.subjectGroup ?? "other",
+    ...draftCategories(draft),
     curriculum: draft.curriculum ?? "",
     gradesBySubject: draft.gradesBySubject ?? undefined,
     area: areaName,
@@ -115,6 +116,11 @@ export async function upsertTutor(opts: {
     create: { whatsappId, ...data, campaignId: campaignId ?? null },
     update: campaignId ? { ...data, campaignId } : data,
   });
+}
+
+/** subjectGroup (the main category) + subjectGroups (all of them, 2026-10-19). */
+function draftCategories(draft: { subjectGroup?: string | null; subjectGroups?: string[] | null }) {
+  return categoryFields(draft) ?? { subjectGroup: "other", subjectGroups: ["other"] };
 }
 
 export async function createParentRequest(opts: {
@@ -144,7 +150,7 @@ export async function createParentRequest(opts: {
       whatsappId,
       studentInfo: draft.studentInfo ?? null,
       subjects: draft.subjects ?? [],
-      subjectGroup: draft.subjectGroup ?? "other",
+      ...draftCategories(draft),
       curriculum: draft.curriculum ?? "",
       area: areaName,
       latitude,

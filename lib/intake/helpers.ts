@@ -44,6 +44,8 @@ export interface TutorDraft {
   qualification?: string | null;
   subjects?: string[] | null;
   subjectGroup?: string | null;
+  /** Every category picked (website forms, 2026-10-19); subjectGroup is the first. */
+  subjectGroups?: string[] | null;
   curriculum?: string | null;
   gradesBySubject?: Record<string, string> | null;
   area?: string | null;
@@ -61,6 +63,8 @@ export interface ParentDraft {
   studentInfo?: string | null;
   subjects?: string[] | null;
   subjectGroup?: string | null;
+  /** Every category picked (website forms, 2026-10-19); subjectGroup is the first. */
+  subjectGroups?: string[] | null;
   curriculum?: string | null;
   area?: string | null;
   budget?: number | null;

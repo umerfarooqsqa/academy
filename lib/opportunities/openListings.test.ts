@@ -82,6 +82,7 @@ describe("filterOpenListings", () => {
       opportunityCode: "OPP-2222",
       subjects: ["Biology"],
       subjectGroup: "pre_medical",
+      subjectGroups: ["pre_medical"],
       curriculum: "FSc",
       schoolName: null,
       area: "Malir",

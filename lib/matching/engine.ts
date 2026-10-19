@@ -7,6 +7,7 @@
 
 import { WEIGHTS, renormalize, NEUTRAL_RATING, NEUTRAL_SCORE, TOP_N_CANDIDATES, type WeightKey } from "@/lib/matching/weights";
 import { subjectGradeStrength } from "@/lib/matching/grades";
+import { groupsOf } from "@/lib/subjectGroups";
 
 export interface AreaZoneInput {
   name: string;
@@ -19,6 +20,8 @@ export interface TutorCandidate {
   id: string;
   subjects: string[];
   subjectGroup: string;
+  /** Every category (2026-10-19); empty/missing → just subjectGroup. */
+  subjectGroups?: string[];
   area: string;
   deliveryMode: string; // "in_person" | "online" | "both"
   availability: string[];
@@ -36,6 +39,8 @@ export interface ParentRequestInput {
   id: string;
   subjects: string[];
   subjectGroup: string;
+  /** Every category (2026-10-19); empty/missing → just subjectGroup. */
+  subjectGroups?: string[];
   area: string;
   deliveryMode: string; // "in_person" | "online" | "both"
   budget: number | null;
@@ -99,14 +104,21 @@ function availabilityOverlap(tutorAvail: string[], parentAvail: string[]): numbe
   return overlap / parentAvail.length;
 }
 
+/** Category hard filter: since 2026-10-19 tutors and parents can each have
+ * several categories — at least one must be the same. */
+function shareCategory(tutor: TutorCandidate, parent: ParentRequestInput): boolean {
+  const tutorGroups = new Set(groupsOf(tutor));
+  return groupsOf(parent).some((g) => tutorGroups.has(g));
+}
+
 /**
  * Step 1 — Hard filters. Returns true iff the tutor survives (subject overlap +
- * exact subjectGroup match). Area is filtered separately in Step 2 because it's
+ * a shared subjectGroup). Area is filtered separately in Step 2 because it's
  * tiered, not a flat pass/fail.
  */
 function passesHardFilters(tutor: TutorCandidate, parent: ParentRequestInput): boolean {
   if (tutor.status !== "active") return false;
-  if (tutor.subjectGroup !== parent.subjectGroup) return false;
+  if (!shareCategory(tutor, parent)) return false;
   if (!passesGenderPreference(tutor, parent)) return false;
   return subjectOverlap(tutor.subjects, parent.subjects).length > 0;
 }
@@ -146,7 +158,7 @@ export function checkRequestedTutor(
   zones: AreaZoneInput[],
 ): { eligible: true; note: string | null } | { eligible: false; reason: string } {
   if (tutor.status !== "active") return { eligible: false, reason: "tutor not active" };
-  if (tutor.subjectGroup !== parent.subjectGroup) return { eligible: false, reason: "different category" };
+  if (!shareCategory(tutor, parent)) return { eligible: false, reason: "different category" };
   if (subjectOverlap(tutor.subjects, parent.subjects).length === 0) return { eligible: false, reason: "no shared subject" };
   if (!passesGenderPreference(tutor, parent)) return { eligible: false, reason: "gender preference" };
   if (parent.deliveryMode !== "online" && tieredAreaFilter([tutor], parent, zones).candidates.length === 0) {

@@ -67,7 +67,7 @@ export default async function TutorProfilePage({ params }: Props) {
                       {t.area}
                     </span>
                     <span>{deliveryLabel(t.deliveryMode)}</span>
-                    <span>{groupLabel(t.subjectGroup)}</span>
+                    <span>{t.subjectGroups.map(groupLabel).join(", ")}</span>
                     <RatingLine tutor={t} />
                   </div>
                   <div className="mt-3">

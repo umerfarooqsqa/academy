@@ -18,6 +18,7 @@ import {
   promptText,
   resolveSteps,
   setAnswer,
+  splitSubjects,
   type Answers,
   type FormValue,
   type Step,
@@ -25,6 +26,8 @@ import {
 } from "./liliFormFlow";
 import { chipActiveClass, chipClass, inputClass, linkClass, primaryClass } from "./liliStyles";
 import styles from "./LiliForm.module.css";
+import { checkPhoto } from "./photoQuality";
+import { describeIssues, type PhotoReport } from "@/lib/imageQuality";
 
 export type SubmitResult = { ok: true; declined: boolean; message: string } | { ok: false; error: string };
 
@@ -297,6 +300,8 @@ function StepInput({
           ))}
         </div>
       );
+    case "list":
+      return <ListInput step={step} initial={splitSubjects(initial)} autoFocus={autoFocus} onAnswer={onAnswer} />;
     case "multiChips":
       return <MultiChipsInput step={step} initial={Array.isArray(initial) ? (initial as string[]) : []} onAnswer={onAnswer} />;
     case "location":
@@ -369,6 +374,76 @@ function TextInput({
   );
 }
 
+function ListInput({
+  step,
+  initial,
+  autoFocus,
+  onAnswer,
+}: {
+  step: Extract<Step, { kind: "list" }>;
+  initial: string[];
+  autoFocus: boolean;
+  onAnswer: (value: FormValue) => void;
+}) {
+  const [items, setItems] = useState<string[]>(initial.length ? initial : [""]);
+  const [error, setError] = useState<string | null>(null);
+  const [focusIndex, setFocusIndex] = useState<number | null>(autoFocus ? 0 : null);
+
+  // Commas separate entries in the stored answer, so they can't be inside one.
+  const update = (i: number, v: string) => {
+    setItems((list) => list.map((item, idx) => (idx === i ? v.replace(/,/g, " ") : item)));
+    setError(null);
+  };
+  const add = () => {
+    setItems((list) => [...list, ""]);
+    setFocusIndex(items.length);
+  };
+  const remove = (i: number) => setItems((list) => (list.length === 1 ? [""] : list.filter((_, idx) => idx !== i)));
+
+  function next(e: React.FormEvent) {
+    e.preventDefault();
+    const value = items.map((v) => v.trim()).filter(Boolean).join(", ");
+    if (!value) {
+      setError("Please add at least one to continue.");
+      return;
+    }
+    onAnswer(value);
+  }
+
+  return (
+    <form onSubmit={next} className="flex flex-col gap-2">
+      <ol className="flex flex-col gap-2">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-center gap-2">
+            <span className="w-7 shrink-0 text-right text-base font-semibold text-slate-500">{i + 1}.</span>
+            <input
+              type="text"
+              className={inputClass}
+              value={item}
+              placeholder={i === 0 ? step.placeholder : undefined}
+              aria-label={`${step.label} ${i + 1}`}
+              autoFocus={focusIndex === i}
+              onChange={(e) => update(i, e.target.value)}
+            />
+            {items.length > 1 && (
+              <button type="button" className={`${linkClass} shrink-0`} aria-label={`Remove ${item || `row ${i + 1}`}`} onClick={() => remove(i)}>
+                ✕
+              </button>
+            )}
+          </li>
+        ))}
+      </ol>
+      <button type="button" className={`${linkClass} ml-9 self-start`} onClick={add}>
+        + {step.addLabel}
+      </button>
+      {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
+      <button type="submit" className={`${primaryClass} self-start`}>
+        Next
+      </button>
+    </form>
+  );
+}
+
 function MultiChipsInput({
   step,
   initial,
@@ -412,17 +487,53 @@ function MultiChipsInput({
 
 function FilesInput({ step, onAnswer }: { step: Extract<Step, { kind: "files" }>; onAnswer: (value: FormValue) => void }) {
   const [files, setFiles] = useState<File[]>([]);
+  // Photo quality (2026-10-19): undefined = still checking, null = couldn't check.
+  const [reports, setReports] = useState<(PhotoReport | null | undefined)[]>([]);
+
+  function choose(list: File[]) {
+    setFiles(list);
+    if (!step.qualityCheck) return;
+    setReports(list.map(() => undefined));
+    list.forEach((file, i) =>
+      checkPhoto(file).then((r) => setReports((rs) => (rs.length === list.length ? rs.map((x, j) => (j === i ? r : x)) : rs))),
+    );
+  }
+
+  const checking = step.qualityCheck && reports.some((r) => r === undefined);
+  const poor = files.map((f, i) => ({ name: f.name, issues: reports[i]?.issues ?? [] })).filter((f) => f.issues.length > 0);
 
   return (
     <div className="flex flex-col gap-3">
       <label className={`${chipClass} cursor-pointer self-start`}>
         📷 {files.length > 0 ? "Choose a different photo" : step.multiple ? "Choose photo(s)" : "Choose photo"}
-        <input type="file" accept="image/*" multiple={step.multiple} className="sr-only" onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
+        <input type="file" accept="image/*" multiple={step.multiple} className="sr-only" onChange={(e) => choose(Array.from(e.target.files ?? []))} />
       </label>
       {files.length > 0 && <p className="text-sm text-slate-600">{files.map((f) => f.name).join(", ")}</p>}
+      {step.qualityCheck && files.length > 0 && (
+        <div aria-live="polite">
+          {checking ? (
+            <p className="text-sm text-slate-500">Checking the photo…</p>
+          ) : poor.length > 0 ? (
+            <div className="rounded-xl bg-amber-50 p-4 text-sm leading-relaxed text-amber-900 ring-1 ring-amber-200">
+              <p className="font-semibold">This photo may be hard to read</p>
+              <ul className="mt-1 list-disc pl-5">
+                {poor.map((p) => (
+                  <li key={p.name}>
+                    {files.length > 1 ? `${p.name} ` : "It "}
+                    {describeIssues(p.issues)}.
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1">For a clear photo: lay it flat in good light, hold the phone steady and fill the screen with the page.</p>
+            </div>
+          ) : reports.every((r) => r) ? (
+            <p className="text-sm font-medium text-emerald-700">✓ Photo looks clear</p>
+          ) : null}
+        </div>
+      )}
       <div className="flex items-center gap-4">
-        <button type="button" className={primaryClass} disabled={files.length === 0} onClick={() => onAnswer(files)}>
-          Next
+        <button type="button" className={primaryClass} disabled={files.length === 0 || checking} onClick={() => onAnswer(files)}>
+          {poor.length > 0 ? "Use anyway" : "Next"}
         </button>
         <button type="button" className={linkClass} onClick={() => onAnswer(null)}>
           Skip this one

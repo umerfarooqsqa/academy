@@ -8,8 +8,7 @@
 // font). Facebook's own buttons cover the top and bottom ~250px of a story, so
 // the content stays inside the middle. Pure.
 
-import { SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
-import { TIME_LABELS, tidy, type OpportunityListing } from "@/lib/opportunities/formatText";
+import { TIME_LABELS, listingGroupsLabel, tidy, type OpportunityListing } from "@/lib/opportunities/formatText";
 
 export const STORY_WIDTH = 1080;
 export const STORY_HEIGHT = 1920;
@@ -40,7 +39,7 @@ function subjectFontSize(text: string): number {
 
 export function storyCardHtml(listing: OpportunityListing, opts: { siteName: string; siteUrl: string }): string {
   const subjects = listing.subjects.map(tidy).join(", ") || "Tutor";
-  const group = SUBJECT_GROUP_LABELS[listing.subjectGroup as SubjectGroup] ?? "";
+  const group = listingGroupsLabel(listing);
   const level = tidy(listing.curriculum) || group;
   const online = listing.deliveryMode === "online";
   const times = (listing.availability ?? []).map((t) => TIME_LABELS[t]).filter(Boolean);

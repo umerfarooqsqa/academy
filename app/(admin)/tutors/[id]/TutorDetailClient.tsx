@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AVAILABILITY_TAGS } from "@/lib/messages";
-import { SUBJECT_GROUPS, SUBJECT_GROUP_LABELS, type SubjectGroup } from "@/lib/subjectGroups";
+import { groupsOf } from "@/lib/subjectGroups";
+import CategoryPicker from "@/app/components/CategoryPicker";
 import { card, input, label, btnPrimary, btnSecondary, btnDanger, badge } from "@/app/components/ui";
 import PublicProfileCard, { type PublicProfileFields } from "./PublicProfileCard";
 
@@ -16,6 +17,7 @@ interface TutorDetailProps {
     qualification: string;
     subjects: string[];
     subjectGroup: string;
+    subjectGroups: string[];
     curriculum: string;
     gradesBySubject: unknown;
     cnicImageUrl: string | null;
@@ -68,7 +70,7 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
     qualification: tutor.qualification,
     schoolName: tutor.schoolName ?? "",
     subjects: tutor.subjects.join(", "),
-    subjectGroup: tutor.subjectGroup,
+    subjectGroups: groupsOf(tutor),
     curriculum: tutor.curriculum,
     gradesBySubject: gradesToText(tutor.gradesBySubject),
     area: tutor.area,
@@ -105,7 +107,7 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
         qualification: form.qualification,
         schoolName: form.schoolName.trim() || null,
         subjects: form.subjects.split(",").map((s) => s.trim()).filter(Boolean),
-        subjectGroup: form.subjectGroup,
+        subjectGroups: form.subjectGroups,
         curriculum: form.curriculum,
         gradesBySubject: textToGrades(form.gradesBySubject),
         area: form.area,
@@ -211,18 +213,8 @@ export default function TutorDetailClient({ tutor, subscriptions }: TutorDetailP
             />
           </div>
           <div>
-            <label className={label}>Subject group</label>
-            <select
-              className={input}
-              value={form.subjectGroup}
-              onChange={(e) => setForm({ ...form, subjectGroup: e.target.value })}
-            >
-              {SUBJECT_GROUPS.map((g) => (
-                <option key={g} value={g}>
-                  {SUBJECT_GROUP_LABELS[g as SubjectGroup]}
-                </option>
-              ))}
-            </select>
+            <label className={label}>Categories</label>
+            <CategoryPicker value={form.subjectGroups} onChange={(subjectGroups) => setForm({ ...form, subjectGroups })} />
           </div>
           <div>
             <label className={label}>Curriculum</label>

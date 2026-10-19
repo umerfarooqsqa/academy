@@ -6,6 +6,7 @@
 // experience, education, rating and verification badges — never the
 // WhatsApp number, CNIC/marksheet images, fee or exact location.
 
+import { groupsOf } from "@/lib/subjectGroups";
 import { prisma } from "@/lib/db";
 import { VERIFIED_TUTOR_WHERE } from "@/lib/tutors/verified";
 
@@ -33,6 +34,7 @@ export interface PublicTutorProfile {
   deliveryMode: string;
   subjects: string[];
   subjectGroup: string;
+  subjectGroups: string[];
   curriculum: string;
   grades: { subject: string; grade: string }[];
   gradesVerified: boolean;
@@ -79,6 +81,7 @@ type TutorRow = {
   deliveryMode: string;
   subjects: string[];
   subjectGroup: string;
+  subjectGroups?: string[];
   curriculum: string;
   gradesBySubject: unknown;
   gradesVerifiedAt: Date | null;
@@ -107,6 +110,7 @@ export function toPublicProfile(t: TutorRow): PublicTutorProfile {
     deliveryMode: t.deliveryMode,
     subjects: t.subjects,
     subjectGroup: t.subjectGroup,
+    subjectGroups: groupsOf(t),
     curriculum: t.curriculum,
     grades,
     gradesVerified: t.gradesVerifiedAt != null,
@@ -130,6 +134,7 @@ const SELECT = {
   deliveryMode: true,
   subjects: true,
   subjectGroup: true,
+  subjectGroups: true,
   curriculum: true,
   gradesBySubject: true,
   gradesVerifiedAt: true,

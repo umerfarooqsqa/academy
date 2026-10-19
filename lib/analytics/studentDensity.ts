@@ -7,9 +7,12 @@
 // "Still needs a tutor": the request isn't closed and none of its matches has
 // reached paid/completed (i.e. no tutor has been placed with them yet).
 
+import { groupsOf } from "@/lib/subjectGroups";
+
 export interface StudentDensityInput {
   area: string;
   subjectGroup: string;
+  subjectGroups?: string[];
   status: string; // ParentRequest.status: pending | matched | closed
   /** Has any Match with status paid or completed. */
   placed: boolean;
@@ -39,7 +42,7 @@ export function computeStudentDensity(
   filters: StudentDensityFilters = {},
 ): StudentDensityResult {
   const shown = requests.filter((r) => {
-    if (filters.subjectGroup && r.subjectGroup !== filters.subjectGroup) return false;
+    if (filters.subjectGroup && !groupsOf(r).includes(filters.subjectGroup)) return false;
     if (filters.needsTutorOnly && !needsTutor(r)) return false;
     return true;
   });
